@@ -96,6 +96,13 @@ The purchase options from left to right are:
 
 Obviously, if your inventory space is limited then some items will drop to the floor, so watch out!
 
+## Removing a shop
+Breaking a shop sign will result in the shop being removed and the shop stock being placed into the players inventory.
+Any excess stock is dropped on the ground. Breaking the last sign on the chest also removes the chest. Breaking a shop
+chest will remove ALL signs on the chest and therefore all shops associated with those signs. A chest can have 5
+signs/shops on it, but they can only be by the same owner. Alternatively there is a command to remove a shop by name.
+See the Commands section for more details.
+
 ## Commands
 /obs or /obshop will bring up the available commands:<br>
 /obs remove <shopname | all> - removes the named shop or all of your shops - obviously must be owned by the remover.<br>
@@ -128,5 +135,11 @@ specifies. For example, replacing a sign or block that was removed. Shops that a
 cannot be accessed. The "/obs fix <shopname>" command should be used to correct the shop, or switch on the auto
 fix option. The plugin also performs the health check when loading the stop at startup and will attempt to
 correct any issues at that time.
+
+## TODO list
+The code has a lot of todo's already documented, so next steps are to address those.
+In so far as new features we haven't thought that far ahead. We wanted a simple shop that sells items to
+replace what we lost when BetterShops stopped being updated. This plugin is very much our server use-case and
+probably won't satisfy most other server and player requirements.
 
 Compiled for 1.16, but should work with older versions (up to a point).
