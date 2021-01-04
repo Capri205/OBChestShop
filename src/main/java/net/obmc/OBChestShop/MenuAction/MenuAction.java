@@ -64,7 +64,7 @@ public class MenuAction implements Listener {
 				event.setCancelled(true);
 
 				String action = (shopview.split(" ", 0)[0]).replace("[","").replace("]","");
-				String shopname = shopview.split(" ", 0)[1];
+				String shopname = shopview.substring(shopview.indexOf(" ")+1, shopview.length());
 
 				// MENU BACK
 				if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
@@ -72,12 +72,11 @@ public class MenuAction implements Listener {
 				}
 				
 				if (event.getRawSlot() < 18) {
-
-					// first two lines - nav, status etc
-
+					// TODO: coming soon - shopping cart
 					if (itemclicked.getType().name().equals("CHEST") && clicktype == ClickType.LEFT) {
 					}
 
+					// go to settings menu
 					if (itemclicked.getType().name().equals("ENDER_CHEST") && clicktype == ClickType.LEFT
 							&& player.getUniqueId().toString().equals(OBChestShop.getShopList().getShop(shopname).getOwner())) {				
 						Settings settingsmenu = new Settings(player, shopname);
@@ -103,7 +102,7 @@ public class MenuAction implements Listener {
 				
 				String action = (shopview.split(" ", 0)[0]).replace("[", "");
 				String itemname = (shopview.split(" ", 0)[1]).replace("]", "");
-				String shopname = shopview.split(" ", 0)[2];
+				String shopname = shopview.substring(shopview.indexOf(" ", shopview.indexOf(" ")+1)+1, shopview.length());
 				
 				Shop shop = OBChestShop.getShopList().getShop(shopname);
 				ShopItem shopitem = shop.getShopItem(itemname);
@@ -113,7 +112,8 @@ public class MenuAction implements Listener {
 					Selling sellmenu = new Selling(shopname, player);
             		sellmenu.draw();
 
-				} else if (event.getRawSlot() > 26 && event.getRawSlot() < 32) {
+				} else if (event.getRawSlot() > 26 && event.getRawSlot() < 32
+						&& (itemclicked.getType().name().startsWith("GREEN") || itemclicked.getType().name().startsWith("LIME"))) {
 					// SELL ITEM
 					Double debitamt = 0.0;
 					int numitems = 0;
@@ -142,16 +142,19 @@ public class MenuAction implements Listener {
 						debitamt = shopitem.getPrice() * 64;
 						numitems = shopitem.getAmount() * 64;
 					}
-					// deduct cost of items from player balance, give player their items, credit shop owner balance
+					// deduct cost of items from player balance, give player their items, credit
+					// shop owner balance
 					// TODO: add EconomyResponse ecr.type checking for not SUCCESS
 					OBChestShop.getEconomy().withdrawPlayer(player, debitamt);
 					shopitem.moveStockToInventory(player.getUniqueId().toString(), numitems);
 					shopitem.removeStock(numitems);
 					Player shopowner = (Player) Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
 					OBChestShop.getEconomy().depositPlayer(shopowner, debitamt);
-					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully purchased item. " + ChatColor.GRAY + "$" + debitamt + ChatColor.GREEN + " removed from balance");
+					player.sendMessage(
+							OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully purchased item. "
+									+ ChatColor.GRAY + "$" + debitamt + ChatColor.GREEN + " removed from balance");
 					// TODO: add titlemanager overlay message
-					
+
 					ItemSell itemsell = new ItemSell(player, shopname, shopitem);
 					itemsell.draw();
 				}
@@ -164,7 +167,8 @@ public class MenuAction implements Listener {
 				event.setCancelled(true);
 
 				String action = (shopview.split(" ", 0)[0]).replace("[","").replace("]","");
-				String shopname = shopview.split(" ", 0)[1];
+				String shopname = shopview.substring(shopview.indexOf(" ")+1, shopview.length());
+
 				Shop shop = OBChestShop.getShopList().getShop(shopname);
 
 				// MENU BACK
@@ -318,7 +322,7 @@ public class MenuAction implements Listener {
 
 				String action = (shopview.split(" ", 0)[0]).replace("[", "");
 				String itemname = (shopview.split(" ", 0)[1]).replace("]", "");
-				String shopname = shopview.split(" ", 0)[2];
+				String shopname = shopview.substring(shopview.indexOf(" ", shopview.indexOf(" ")+1)+1, shopview.length());
 			
 				ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(itemname);
 				Shop shop = OBChestShop.getShopList().getShop(shopname);

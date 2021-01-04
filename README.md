@@ -129,4 +129,4 @@ cannot be accessed. The "/obs fix <shopname>" command should be used to correct 
 fix option. The plugin also performs the health check when loading the stop at startup and will attempt to
 correct any issues at that time.
 
-Compiled for 1.16, but should work with older versions (up to a point).
+Compiled for 1.16 using Java 11 (with java 1.8 source version), but should work with Java 8 and older versions of Minecraft (up to a point).
