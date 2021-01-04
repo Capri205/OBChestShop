@@ -1,0 +1,15 @@
+name: OBChestShop
+main: net.obmc.OBChestShop.OBChestShop
+version: 0.1-SNAPSHOT
+api-version: 1.16
+author: Fahrenheit451
+depend: [Vault]
+softdepend: [Multiverse-Core]
+description: >
+             A shop plugin for the OB-Minecraft network
+commands:
+  obshop:
+    description: main command
+    usage: Type /obshop for a list of commands
+    aliases:
+      - obs

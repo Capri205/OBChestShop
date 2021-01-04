@@ -1,0 +1,9 @@
+#
+# OB Chest Shop config
+#
+Version: 0.01-SNAPSHOT
+defaultprice: 5.0
+shopcheckinterval: 200
+shopautofix: true
+stocklimit: 1000
+maxstocklimit: 5000
