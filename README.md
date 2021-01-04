@@ -136,14 +136,11 @@ cannot be accessed. The "/obs fix <shopname>" command should be used to correct 
 fix option. The plugin also performs the health check when loading the stop at startup and will attempt to
 correct any issues at that time.
 
-<<<<<<< HEAD
-Compiled for 1.16 using Java 11 (with java 1.8 source version), but should work with Java 8 and older versions of Minecraft (up to a point).
-=======
 ## TODO list
 The code has a lot of todo's already documented, so next steps are to address those.
 In so far as new features we haven't thought that far ahead. We wanted a simple shop that sells items to
 replace what we lost when BetterShops stopped being updated. This plugin is very much our server use-case and
 probably won't satisfy most other server and player requirements.
 
-Compiled for 1.16, but should work with older versions (up to a point).
->>>>>>> branch 'master' of https://github.com/Capri205/OBChestShop.git
+Compiled for 1.16 using Java 11 (with java 1.8 source version), but should work with Java 8 and older versions of Minecraft (up to a point).
+
