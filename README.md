@@ -73,6 +73,29 @@ That covers the main operation of the shop. If the shop is open players can righ
 selling screen. They cannot access the configuration screen, but the ender chest will be there and hovering the mouse
 over it will tell them who owns the shop.
 
+## Purchasing items
+To purchase simply click on the item in the shop and this will drop you into the main item selling screen where the
+options to buy are presented. The options to buy items (shop to sell items) are the 5 blocks from left to right in the
+center of the shop screen. If the block is green then the purchase option is available, but if white then there is some
+reason why you can't purchase that option - lack of money on your part or lack of stock of the item in the shop. Hover
+the mouse over the white wool to see the reason why that option is not available.
+
+The purchase options from left to right are:
+
+  buy 1  - you will pay one and get one of whatever quantity the shop owner has set for one of that item<br>
+         - eg. amount is 10 and price is $5 each - you will pay $5 and receive 10 of the item.<br>
+         -     no different from buying, say a pack of cookies from the store. You buy 1, but get 10 cookies.<br>
+  buy 8  - pay 8 * price and get 8 * the amount - like buying 8 packs of cookies - that's a lot of cookies!<br>
+         - eg. amount is 10 and price is $5 - you will pay $40 and receive 80 of the item.<br>
+  buy 16 - pay price * 16 and receive the amount * 16 - this is called a quarter stack<br>
+         - eg. pay 16 * $5 = $80, and receive 160 of the item.<br>
+  buy 32 - pay price * 32 and receive the amount * 32 - this is called a half stack in the plugin<br>
+         - eg. pay 32 * $5 = $160, and receive 320 of the item into your inventory - good for stone, not cookies!<br>
+  buy 64 - pay price * 64 and receive the amount * 64 - this is called a stack<br>
+         - eg. pay 64 * $5 = $320, and receive a whopping 640 of the item!<br>
+
+Obviously, if your inventory space is limited then some items will drop to the floor, so watch out!
+
 ## Commands
 /obs or /obshop will bring up the available commands:<br>
 /obs remove <shopname | all> - removes the named shop or all of your shops - obviously must be owned by the remover.<br>
