@@ -114,7 +114,7 @@ only be done when the server is offline.
 The plugin will store shop data in yaml files in the plugin/OBChestShop/Shops/<owner uuid> folder. Shops are stored
 by shop name. Shop files are updated according to transaction and changes, so editing these whilst the server is
 running will result in the changes being overwritten. Shops are also saved on shutdown.
-###Shop state.
+### Shop state.
 The plugin maintains a running state for each shop. Initially when the plugin is loading each shop there is a
 NoShop state, and as each step in validating and loading the shop is performed the state changes until the shop
 is at ShopOK state. There are about 19 states covering config file status, world status to sign and chest block
