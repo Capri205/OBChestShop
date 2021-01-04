@@ -96,6 +96,13 @@ The purchase options from left to right are:
 
 Obviously, if your inventory space is limited then some items will drop to the floor, so watch out!
 
+## Removing a shop
+Breaking a shop sign will result in the shop being removed and the shop stock being placed into the players inventory.
+Any excess stock is dropped on the ground. Breaking the last sign on the chest also removes the chest. Breaking a shop
+chest will remove ALL signs on the chest and therefore all shops associated with those signs. A chest can have 5
+signs/shops on it, but they can only be by the same owner. Alternatively there is a command to remove a shop by name.
+See the Commands section for more details.
+
 ## Commands
 /obs or /obshop will bring up the available commands:<br>
 /obs remove <shopname | all> - removes the named shop or all of your shops - obviously must be owned by the remover.<br>
@@ -114,7 +121,7 @@ only be done when the server is offline.
 The plugin will store shop data in yaml files in the plugin/OBChestShop/Shops/<owner uuid> folder. Shops are stored
 by shop name. Shop files are updated according to transaction and changes, so editing these whilst the server is
 running will result in the changes being overwritten. Shops are also saved on shutdown.
-###Shop state.
+### Shop state.
 The plugin maintains a running state for each shop. Initially when the plugin is loading each shop there is a
 NoShop state, and as each step in validating and loading the shop is performed the state changes until the shop
 is at ShopOK state. There are about 19 states covering config file status, world status to sign and chest block
@@ -129,4 +136,14 @@ cannot be accessed. The "/obs fix <shopname>" command should be used to correct 
 fix option. The plugin also performs the health check when loading the stop at startup and will attempt to
 correct any issues at that time.
 
+<<<<<<< HEAD
 Compiled for 1.16 using Java 11 (with java 1.8 source version), but should work with Java 8 and older versions of Minecraft (up to a point).
+=======
+## TODO list
+The code has a lot of todo's already documented, so next steps are to address those.
+In so far as new features we haven't thought that far ahead. We wanted a simple shop that sells items to
+replace what we lost when BetterShops stopped being updated. This plugin is very much our server use-case and
+probably won't satisfy most other server and player requirements.
+
+Compiled for 1.16, but should work with older versions (up to a point).
+>>>>>>> branch 'master' of https://github.com/Capri205/OBChestShop.git
