@@ -78,7 +78,8 @@ public class OBChestShop extends JavaPlugin {
 		}
 
 		// setup our shop checker task
-		BukkitTask checkShops = new ShopChecker(instance).runTaskTimer(instance, instance.getConfig().getLong("shopcheckinterval"), instance.getConfig().getLong("shopcheckinterval"));		
+		BukkitTask checkShops = new ShopChecker(instance).runTaskTimer(instance, instance.getConfig().getLong("shopcheckinterval"), instance.getConfig().getLong("shopcheckinterval"));
+		log.log(Level.INFO, getLogMsgPrefix() + "    ShopChecker initialized (taskid " + checkShops.getTaskId() + ")");
 
 	}
 	
@@ -107,9 +108,8 @@ public class OBChestShop extends JavaPlugin {
 			log.log(Level.INFO, getLogMsgPrefix() + "    Errors encountered saving shops");
 		}
 		
-		//TODO: not sure why this was commented out - check if we actually need - reload vs. restart?
 		// cancel any background tasks for this plugin
-		//Bukkit.getScheduler().cancelTasks(this);
+		Bukkit.getScheduler().cancelTasks(this);
 		
 		log.log(Level.INFO, getLogMsgPrefix() + "    Plugin successfully disabled");
 	}

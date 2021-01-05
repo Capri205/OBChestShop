@@ -31,7 +31,6 @@ public class PluginConfig {
 
 	// save our config out
 	public boolean save() {
-		//TODO: switch to plugin saveConfig() ?
     	log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "    Saving configuration");
 		try {
 			config.save(configFile);

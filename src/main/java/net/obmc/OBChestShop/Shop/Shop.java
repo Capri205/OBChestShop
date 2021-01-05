@@ -183,7 +183,7 @@ public class Shop {
 	}
 
 	// create the player shop config file and populate
-	public boolean CreateConfig(String name) {
+	public ShopState CreateConfig(String name) {
 
 		File pluginfolder = OBChestShop.getInstance().getDataFolder();
 		shopfile = new File(pluginfolder, "Shops/" + shopowner + "/" + shopname + ".yml");
@@ -191,16 +191,15 @@ public class Shop {
 		if (shopconfig == null) {
 			state = ShopState.NoConfig;
 			logShopMessage();
-			return false;
+			return state;
 		}
-		isopen = false;
 
 		HashMap<String,String> data = new HashMap<String, String>();
 		shopconfig.set("Type", "OBChestShop");
 		shopconfig.set("Name", shopname);
 		shopconfig.set("Description", "No description");
 		shopconfig.set("Owner", shopowner);
-		shopconfig.set("Open", isopen);
+		shopconfig.set("Open", false);
 		shopconfig.set("World", chestblock.getWorld().getName());
 		state = ShopState.ConfigOK;
 		
@@ -241,9 +240,7 @@ public class Shop {
 		}
 
 		state = ShopState.ShopPreChecks;
-		
-		//TODO: change from boolean to shopstate
-		return true;
+		return state;
 	}
 
 	// Output a shop message to the log
@@ -634,7 +631,7 @@ public class Shop {
 	public ShopState getState() {
 		return state;
 	}
-	public void setStatus(ShopState state) {
+	public void setState(ShopState state) {
 		this.state = state;
 	}
 

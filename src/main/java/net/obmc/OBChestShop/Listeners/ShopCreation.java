@@ -58,7 +58,7 @@ public class ShopCreation implements Listener {
         		// sort out ownership of the chest
         		//	empty chest => nobody owner, so set owner to player
         		//	someone owner => deny shop placement unless op and then owner is current chest owner
-        		//  TODO: consider a config option to deny vertical placement - ie. chest directly on top of another
+        		//  TODO: consider a config option to deny vertical placement - ie. different players chest directly on top of another players chest
         		String owner = OBChestShop.getShopList().getShopOwnerByLocation(chestblock.getLocation());
         		Boolean goodtogo = false;
         		if (!owner.isEmpty()) {
@@ -120,41 +120,48 @@ public class ShopCreation implements Listener {
         }
 	}
 
+	// create a new shop
 	private boolean createShop(Player player, Block chestblock, Block signblock, String shopname, String shopowner) {
-		//TODO: validate name
-		//			is text and <= 35 chars and name not already taken, replace "," for "_"
-		if (OBChestShop.getShopList().shopExists(shopname)) {
+
+		// if shop doesn't already exist, create it, setup config and populate shop sign and finally validate it
+		if (!OBChestShop.getShopList().shopExists(shopname)) {
+		
+			Shop shop = new Shop(shopowner, shopname, chestblock.getLocation(), signblock.getLocation());
+			if (shop.CreateConfig(shopname).compareTo(ShopState.ShopPreChecks) == 0) {
+			
+				// add shop to our live list
+				OBChestShop.getShopList().addShop(shopname, shop);
+				player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop Created!");
+				
+				// update the sign on the chest to reflect the shop
+				Sign sign = (Sign) signblock.getState();
+				sign.setLine(0, ChatColor.AQUA + "**************");
+				sign.setLine(1, ChatColor.GREEN + "Shop");
+				sign.setLine(2, ChatColor.RED + "Closed");
+				sign.setLine(3, ChatColor.AQUA + "**************");
+				for (Player players : Bukkit.getOnlinePlayers()) {
+					players.sendSignChange(sign.getBlock().getLocation(), sign.getLines());
+				}
+				sign.update(true);
+				
+				shop.setState(shop.validateShop());
+				if (shop.getState().compareTo(ShopState.ShopOK) == 0) {
+					return true;
+				} else {
+					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop validation failed! Shop state is " + shop.getState().toString());
+				}
+				
+			} else {
+				player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop creation failed! Shop state is " + shop.getState().toString());
+			}
+			shop.logShopMessage();
+			
+		} else {
 			player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop name already taken");
-			signblock.breakNaturally();
-			return false;
 		}
-
-		Shop shop = new Shop(shopowner, shopname, chestblock.getLocation(), signblock.getLocation());
-		//TODO: change to check shop state
-		if (!shop.CreateConfig(shopname)) {
-			player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop creation failed!");
-  			signblock.breakNaturally();
-  			return false;
-		}
-			
-		// add shop to our live list
-		OBChestShop.getShopList().addShop(shopname, shop);
-		player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop Created!");
-			
-		shop.setStatus(ShopState.ShopOK);
-
-		// update the sign on the chest to reflect the shop
-		Sign sign = (Sign) signblock.getState();
-		sign.setLine(0, ChatColor.AQUA + "**************");
-		sign.setLine(1, ChatColor.GREEN + "Shop");
-		sign.setLine(2, ChatColor.RED + "Closed");
-		sign.setLine(3, ChatColor.AQUA + "**************");
-		for (Player players : Bukkit.getOnlinePlayers()) {
-            players.sendSignChange(sign.getBlock().getLocation(), sign.getLines());
-        }
-		sign.update(true);
-
-		return true;
+		signblock.breakNaturally();
+		return false;
+		
 	}
 
 }

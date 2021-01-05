@@ -46,7 +46,6 @@ public class LiveShopList {
 
     // add a shop to our working list
     public void addShop(String shopname, Shop shop) {
-    	//TODO: add validation around this (exists) and change to boolean?
     	shoplist.put(shopname, shop);
     	if (!locationlist.containsKey(shop.getChestXYZ())) {
     		locationlist.put(shop.getChestXYZ(), new ArrayList<Location>());
@@ -54,10 +53,8 @@ public class LiveShopList {
     	locationlist.get(shop.getChestXYZ()).add(shop.getSignXYZ());
     }
 
-    // remove a shop from our active list and remove the configuration file
-    //TODO: possibly add remove user directory if no shop left
-    //TODO: give stock back to player!
-	public boolean removeShop(String shopname) {
+    // remove a shop from our active lists
+	public void removeShop(String shopname) {
 		if (shoplist.containsKey(shopname)) {
 			// remove the sign location for the chest if it exists
 			if (locationlist.containsKey(shoplist.get(shopname).getChestXYZ())) {
@@ -68,11 +65,7 @@ public class LiveShopList {
 				locationlist.remove(shoplist.get(shopname).getChestXYZ());
 			}
 			shoplist.remove(shopname);
-			if (shoplist.containsKey(shopname)) {
-				return false;
-			}
 		}
-		return true;
 	}
 
 	// load shops from the shops directory
@@ -174,9 +167,6 @@ public class LiveShopList {
 			}
 			loc = getShopChestLocation(getShopnameBySignLocation(loc));
 		}
-//		if (locationlist.containsKey(loc)) {
-//			return locationlist.get(loc).size();
-//		}
 		Iterator<Location> lit = locationlist.keySet().iterator();
 		Location sloc = null;
 		while (lit.hasNext()){
@@ -258,7 +248,6 @@ public class LiveShopList {
 	
 	// get the owner of a shop by location
 	public String getShopOwnerByLocation(Location loc) {
-		// TODO: Dont we need to check the location is actually a shop location, or check if that's done before entering this function.
 		if (Tag.SIGNS.isTagged(Bukkit.getWorld(loc.getWorld().getName()).getBlockAt(loc).getType())) {
 			if (getShopChestLocation(getShopnameBySignLocation(loc)) == null) {
 				return "";
@@ -272,14 +261,12 @@ public class LiveShopList {
 				}
 			}
 		}
-		//TODO: this doesnt seem right - check the logic around this function
 		return "";
 	}
 	
 	// list shops in list - on server or for player
 	public void listShops(Player player, String listtype) {
 		if (listtype.isEmpty()) {
-			//TODO: this doesn't work. recode this.
 			if (shoplist.size() > 0) {
 				player.sendMessage(ChatColor.LIGHT_PURPLE + "Your shops on this server:");
 				for (String key : shoplist.keySet()) {

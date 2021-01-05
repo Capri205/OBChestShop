@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -40,6 +39,8 @@ public class MenuAction implements Listener {
 	@EventHandler
 	public void clickEvent(InventoryClickEvent event) {
 		
+		AnvilGUI gui = null;
+		
 		if (event.getCurrentItem() != null) {
 
 			Player player = (Player) event.getWhoClicked();
@@ -63,7 +64,6 @@ public class MenuAction implements Listener {
 
 				event.setCancelled(true);
 
-				String action = (shopview.split(" ", 0)[0]).replace("[","").replace("]","");
 				String shopname = shopview.substring(shopview.indexOf(" ")+1, shopview.length());
 
 				// MENU BACK
@@ -87,8 +87,6 @@ public class MenuAction implements Listener {
 					// lines 3 ~ 6 buy item
 					String itemname = event.getCurrentItem().getType().name();
 					ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(itemname);
-					Shop shop = OBChestShop.getShopList().getShop(shopname);
-					
 					ItemSell itemsell = new ItemSell(player, shopname, shopitem);
 					itemsell.draw();
 				}
@@ -100,7 +98,6 @@ public class MenuAction implements Listener {
 
 				event.setCancelled(true);
 				
-				String action = (shopview.split(" ", 0)[0]).replace("[", "");
 				String itemname = (shopview.split(" ", 0)[1]).replace("]", "");
 				String shopname = shopview.substring(shopview.indexOf(" ", shopview.indexOf(" ")+1)+1, shopview.length());
 				
@@ -166,7 +163,6 @@ public class MenuAction implements Listener {
 
 				event.setCancelled(true);
 
-				String action = (shopview.split(" ", 0)[0]).replace("[","").replace("]","");
 				String shopname = shopview.substring(shopview.indexOf(" ")+1, shopview.length());
 
 				Shop shop = OBChestShop.getShopList().getShop(shopname);
@@ -186,7 +182,7 @@ public class MenuAction implements Listener {
     				meta.setLore(Arrays.asList("Enter name"));
     				guiitem.setItemMeta(meta);
 
-    				AnvilGUI gui = new AnvilGUI.Builder()
+    				gui = new AnvilGUI.Builder()
     					.text(shopname)
     					.title("Enter name:")
     					.itemLeft(guiitem)
@@ -217,7 +213,7 @@ public class MenuAction implements Listener {
     					description = "?";
     				}
 
-    				AnvilGUI gui = new AnvilGUI.Builder()
+    				gui = new AnvilGUI.Builder()
     					.text(description)
     					.title("Enter description:")
     					.itemLeft(guiitem)
@@ -230,7 +226,6 @@ public class MenuAction implements Listener {
     					.open(player);
 				}
 				// SET STOCK LIMIT
-				// TODO: do we need to reduce items in stock to the new limit if less than before?
 				if (event.getRawSlot() == 6 && itemclicked.getType().name().equals("COMPASS") && clicktype == ClickType.LEFT) {
 
     				// get the description for the shop using an anvil gui
@@ -241,7 +236,7 @@ public class MenuAction implements Listener {
     				guiitem.setItemMeta(meta);
     				String stocklimit = OBChestShop.getShopList().getShop(shopname).getStockLimit().toString();
 
-    				AnvilGUI gui = new AnvilGUI.Builder()
+    				gui = new AnvilGUI.Builder()
     					.text(stocklimit)
     					.title("Enter stock limit:")
     					.itemLeft(guiitem)
@@ -266,8 +261,8 @@ public class MenuAction implements Listener {
 				}
 				// ADD ITEM TO SHOP (from player inventory)
 				if (event.getRawSlot() > 53 && event.getRawSlot() < 90) {
+
 					// check if we have space for a new item in the shop
-					// TODO: should be a method of shop - check size of shoplist instead of scanning inventory?
 					int openslot = -1;
 					if (shop.hasSpace()) {
 						openslot = shop.getItemList().size() + 18;
@@ -277,10 +272,14 @@ public class MenuAction implements Listener {
 					if (openslot > 17 && openslot < 54) {
 						int stockchangeamount = 1;
 						if (!shop.getItemList().contains(event.getCurrentItem().getType().toString())) {
-							ItemStack cloneitem = itemclicked.clone();
 							if ( clicktype == ClickType.SHIFT_LEFT ) {
 								stockchangeamount = itemclicked.getAmount();
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item. ");
 							}
+							if (stockchangeamount > shop.getStockLimit()) {
+								stockchangeamount = shop.getStockLimit();
+							}
+							ItemStack cloneitem = itemclicked.clone();
 							cloneitem.setAmount(1);
 							shop.addShopItem(cloneitem.getType().toString(), new ShopItem(cloneitem, stockchangeamount));
 							event.getInventory().setItem(openslot, cloneitem);
@@ -298,7 +297,7 @@ public class MenuAction implements Listener {
 								if (shopitem.getStockQuantity() < shop.getStockLimit()) {
 									if ((shopitem.getStockQuantity() + stockchangeamount) > shop.getStockLimit()) {
 										stockchangeamount = shop.getStockLimit() - shopitem.getStockQuantity();
-										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached. ");
+										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item.");
 									}
 									shop.addItemStock(itemclicked.getType().name(), stockchangeamount);
 									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + stockchangeamount + " " + ChatColor.GRAY + itemclicked.getType().name().toLowerCase() + ChatColor.GREEN + " added to stock");
@@ -320,7 +319,6 @@ public class MenuAction implements Listener {
 				
 				event.setCancelled(true);
 
-				String action = (shopview.split(" ", 0)[0]).replace("[", "");
 				String itemname = (shopview.split(" ", 0)[1]).replace("]", "");
 				String shopname = shopview.substring(shopview.indexOf(" ", shopview.indexOf(" ")+1)+1, shopview.length());
 			
@@ -337,7 +335,8 @@ public class MenuAction implements Listener {
 					shopitem.moveStockToInventory(player.getUniqueId().toString(), shopitem.getStockQuantity());
 					OBChestShop.getShopList().getShop(shopname).removeitem(itemname);
 					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Removed " + ChatColor.GRAY + itemname.toLowerCase() + ChatColor.GREEN + " from shop");
-					//TODO: close out other players menus if they have it open, or double check item still exists in shop before purchase
+					// TODO: close out other players menus if they have it open, or double check item still exists in shop before purchase
+					// TODO: raises a bigger issue of in-flight transactions and shop changes - need to test
     				Settings settingsmenu = new Settings(player, shopname);
 					settingsmenu.draw();
 				}
@@ -346,7 +345,7 @@ public class MenuAction implements Listener {
 					// obtain new price for item using an anvil gui
 					ItemStack guiitem = new ItemStack(Material.EMERALD, 1);
 
-    				AnvilGUI gui = new AnvilGUI.Builder()
+    				gui = new AnvilGUI.Builder()
     					.text(shopitem.getPriceFormatted())
     					.title("Enter new price:")
     					.itemLeft(guiitem)
@@ -366,7 +365,7 @@ public class MenuAction implements Listener {
 					// obtain new price for item using an anvil gui
     				ItemStack guiitem = new ItemStack(Material.PRISMARINE_CRYSTALS, 1);
   				
-    				AnvilGUI gui = new AnvilGUI.Builder()
+    				gui = new AnvilGUI.Builder()
     					.text(shopitem.getAmount().toString())
     					.title("Enter new amount:")
     					.itemLeft(guiitem)
@@ -394,7 +393,7 @@ public class MenuAction implements Listener {
     				}
     				guiitem.setItemMeta(itemmeta);
 
-    				AnvilGUI gui = new AnvilGUI.Builder()
+    				gui = new AnvilGUI.Builder()
     					.text(description)
     					.title("Enter new description:")
     					.itemLeft(guiitem)
@@ -463,7 +462,8 @@ public class MenuAction implements Listener {
 					
 						// prevent possible negative amounts being added - like changing stock limit lower when stock is actually higher
 						if (stockchangeamount > 0) {
-							//TODO: add boolean return on move inventory method
+							// TODO: add boolean return on move inventory method
+							// TODO: also raises bigger issue of rollback of a failed transaction - need to test
 							shopitem.moveInventoryToStock(player.getUniqueId().toString(), stockchangeamount);
 							shopitem.addStock(stockchangeamount);
 						}
@@ -511,7 +511,8 @@ public class MenuAction implements Listener {
 							stockchangeamount = shopitem.getStockQuantity();
 						}
 						
-						//TODO: add boolean return on move method
+						// TODO: add boolean return on move method
+						// TODO: raises bigger issue of transaction integrity and rollback
 						shopitem.moveStockToInventory(player.getUniqueId().toString(), stockchangeamount);
 						shopitem.removeStock(stockchangeamount);
 

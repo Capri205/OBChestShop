@@ -1,6 +1,5 @@
 package net.obmc.OBChestShop.Menus;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;

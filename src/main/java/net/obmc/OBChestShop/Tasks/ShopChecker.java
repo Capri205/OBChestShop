@@ -36,12 +36,12 @@ public class ShopChecker extends BukkitRunnable {
 
 			if (shop.getState().compareTo(state) != 0) {
 				if (blacklist.contains(shop.getName())) {
-					shop.setStatus(state);
+					shop.setState(state);
 					if (state.compareTo(ShopState.ShopOK) == 0) {
 						blacklist.remove(shop.getName());
 					}
 				} else {
-					shop.setStatus(state);
+					shop.setState(state);
 					if (state.compareTo(ShopState.ShopOK) != 0) {
 						blacklist.add(shop.getName());
 					}

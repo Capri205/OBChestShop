@@ -104,7 +104,6 @@ public class Settings {
     }
     
     public void draw() {
-        
     	player.openInventory(inv);
     }
 }

@@ -23,19 +23,17 @@ public class ShopRemoval implements Listener {
 
 	@EventHandler
     public void onBreak(BlockBreakEvent event) {
+		
         Block block = event.getBlock();
-        String blocktype = block.getType().toString();
         Player player = event.getPlayer();
-    	Boolean isinvalid = false;
-    	
-        if (OBChestShop.getShopList().shopRelatedBlock(block.getLocation())) {
+        
+    	if (OBChestShop.getShopList().shopRelatedBlock(block.getLocation())) {
 
         	if (OBChestShop.getShopList().getShopSignLocations().contains(block.getLocation()) || Tag.SIGNS.isTagged(block.getType())) {
 
         		// check ownership or OP
         		Block chestblock = BlockUtils.getSignAttachedBlock(block); 
-        		String owner = OBChestShop.getShopList().getShopOwnerByLocation(chestblock.getLocation()); 
-        		if (player.getUniqueId().toString().equals(owner) || player.isOp()) {
+        		if (player.getUniqueId().toString().equals(OBChestShop.getShopList().getShopOwnerByLocation(chestblock.getLocation())) || player.isOp()) {
         		
 	        		// sign processing...
 	        		int shopcount = OBChestShop.getShopList().getShopCountByLocation(chestblock.getLocation());
@@ -59,10 +57,9 @@ public class ShopRemoval implements Listener {
 	    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(player.getUniqueId().toString());
 	    			
 	    			// remove shop from our active list
-	    			if (OBChestShop.getShopList().removeShop(shopname)) {
-						//TODO: if console command then we need to use log not sendmessage
-						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.LIGHT_PURPLE + "'" + shopname + "' - " + ChatColor.GREEN + "Shop Removed!");
-					}
+	    			OBChestShop.getShopList().removeShop(shopname);
+					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.LIGHT_PURPLE + "'" + shopname + "' - " + ChatColor.GREEN + "Shop Removed!");
+					log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + player.getName() + " removed shop " + shopname);
     			} else {
     				player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "You cannot break another players shop!");
     				event.setCancelled(true);
@@ -89,12 +86,14 @@ public class ShopRemoval implements Listener {
 	   					if (!shopfile.delete()) {
 	   						log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Failed to remove shop '" + shopname +"'");
 	   					}
-	   			
+	   					
+		    			// give player the shop inventory
+		    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(player.getUniqueId().toString());
+
 	   					// remove shop from our active list
-	   					if (OBChestShop.getShopList().removeShop(shopname)) {
-	   						//TODO: if console command then we need to use log
-	   						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.LIGHT_PURPLE + "'" + shopname + "' - " + ChatColor.GREEN + "Shop Removed!");
-	   					}
+	   					OBChestShop.getShopList().removeShop(shopname);
+   						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.LIGHT_PURPLE + "'" + shopname + "' - " + ChatColor.GREEN + "Shop Removed!");
+						log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + player.getName() + " removed shop " + shopname);
 	       			}
 	
 	       			// remove chest
@@ -105,8 +104,6 @@ public class ShopRemoval implements Listener {
 						File ownerdir = new File(OBChestShop.getInstance().getDataFolder() + "/Shops/" + owner);
 						ownerdir.delete();
 					}
-
-					//TODO: throw items in shop or chest onto ground
 
         		} else {
     				player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "You cannot break another players shop!");
