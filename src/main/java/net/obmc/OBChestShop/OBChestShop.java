@@ -12,10 +12,10 @@ import org.bukkit.scheduler.BukkitTask;
 import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
 import net.obmc.OBChestShop.Commands.OnCommand;
+import net.obmc.OBChestShop.Listeners.MenuAction;
 import net.obmc.OBChestShop.Listeners.ShopCreation;
 import net.obmc.OBChestShop.Listeners.ShopOpen;
 import net.obmc.OBChestShop.Listeners.ShopRemoval;
-import net.obmc.OBChestShop.MenuAction.MenuAction;
 import net.obmc.OBChestShop.Tasks.ShopChecker;
 
 public class OBChestShop extends JavaPlugin {

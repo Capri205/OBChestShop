@@ -108,6 +108,7 @@ See the Commands section for more details.
 /obs remove <shopname | all> - removes the named shop or all of your shops - obviously must be owned by the remover.<br>
 /obs list [all] - lists your shops or all shops with the world they exist in<br>
 /obs status [all] - lists your shops or all shops along with their state (see notes on state later)<br>
+/obs location [all] - lists your shops or all shop along with their world and [X,Y,Z] location<br>
 /obs fix <shopname> - attempts to validate and fix a shop (see notes on shop persistence later)<br>
 /obs autofix [enable|disable] - toggles on/off the periodic scanning and automatic fixing of shops with errors (see
 notes on shop persistence later)

@@ -112,6 +112,17 @@ public class OnCommand implements CommandExecutor {
 											Bukkit.getWorld(OBChestShop.getShopList().getShopWorld(shopname)).getBlockAt(chestloc).breakNaturally();
 										}
 
+						   				// close out inventory for any player accessing the doomed shop
+						   				for (Player onlineplayer : Bukkit.getOnlinePlayers()) {
+						   					if (OBChestShop.getShopList().getShop(shopname).isPlayerAccessing(onlineplayer)) {
+						   						onlineplayer.closeInventory();
+						   						onlineplayer.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop " + shopname + " was removed!");
+						   						log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Force closed " + onlineplayer.getName() + "'s inventory view as shop " + shopname + " is being removed");
+						   					} else {
+						   						log.log(Level.INFO, "debug - " + onlineplayer.getName() + " no inventory open");
+						   					}
+						   				}
+						   				
 										OBChestShop.getShopList().removeShop(shopname);
 										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop Removed!");
 										log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + player.getName() + "  removed shop " + shopname);
@@ -200,6 +211,7 @@ public class OnCommand implements CommandExecutor {
     	sender.sendMessage(ChatColor.LIGHT_PURPLE + "/obshop remove <shopname " + ChatColor.ITALIC + "or " + ChatColor.RESET + "" + ChatColor.LIGHT_PURPLE + "all>" + ChatColor.GOLD + " - remove a shop of yours");
     	sender.sendMessage(ChatColor.LIGHT_PURPLE + "/obshop list [all]" + ChatColor.GOLD + " - List your shops or all shops");
     	sender.sendMessage(ChatColor.LIGHT_PURPLE + "/obshop status [all]" + ChatColor.GOLD + " - Show status of your shops or all shops");
+    	sender.sendMessage(ChatColor.LIGHT_PURPLE + "/obshop location [all]" + ChatColor.GOLD + " - Show location of your shops or all shops");
     	sender.sendMessage(ChatColor.LIGHT_PURPLE + "/obshop fix <shopname>" + ChatColor.GOLD + " - Attempt to fix an invalid shop");
     	sender.sendMessage(ChatColor.LIGHT_PURPLE + "/obshop autofix [enable|disable]" + ChatColor.GOLD + " - Enable/disable shop auto fix");
 	}

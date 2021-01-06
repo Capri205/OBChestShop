@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -14,7 +15,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.InventoryView;
+
 import net.obmc.OBChestShop.OBChestShop;
+import net.obmc.OBChestShop.Shop.Shop;
 import net.obmc.OBChestShop.Utils.BlockUtils;
 
 public class ShopRemoval implements Listener {
@@ -45,7 +49,19 @@ public class ShopRemoval implements Listener {
 	   					Location chestloc = OBChestShop.getShopList().getShopChestLocation(shopname);
 	   					Bukkit.getWorld(block.getWorld().getName()).getBlockAt(chestloc).breakNaturally();
 	   				}
-	   				
+
+	   				// close out inventory for any player accessing the doomed shop
+	   				Shop shop = OBChestShop.getShopList().getShop(shopname);
+	   				for (Player onlineplayer : Bukkit.getOnlinePlayers()) {
+	   					if (shop.isPlayerAccessing(onlineplayer)) {
+	   						onlineplayer.closeInventory();
+	   						onlineplayer.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop " + shopname + " was removed!");
+	   						log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Force closed " + onlineplayer.getName() + "'s inventory view as shop " + shopname + " is being removed");
+	   					} else {
+	   						log.log(Level.INFO, "debug - " + onlineplayer.getName() + " no inventory open");
+	   					}
+	   				}
+
 	   				// remove shop config file
 	       			File shopfile = new File(OBChestShop.getInstance().getDataFolder() + "/Shops/" +
 	       					OBChestShop.getShopList().getShopOwner(shopname) + "/" + shopname + ".yml");
@@ -113,4 +129,5 @@ public class ShopRemoval implements Listener {
         }
 	}
 	
+
 }

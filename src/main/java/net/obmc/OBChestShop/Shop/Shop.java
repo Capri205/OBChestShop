@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -57,6 +58,8 @@ public class Shop {
     private Boolean maintenanceMode = false;
     
     private Map<String, ShopItem> shopitems = new HashMap<String, ShopItem>();
+    
+    private final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf('§') + "[0-9A-FK-OR]");
 
     // create shop stub
 	public Shop(String owner, String name, Location chestlocation, Location signlocation) {
@@ -769,4 +772,25 @@ public class Shop {
 		}
 		return breachcnt;
 	}
+	
+	// check if player accessing this shop in some way
+	public boolean isPlayerAccessing(Player player) {
+		String playerview = null;
+		String playerviewshop = null;
+		playerview = stripcolor(player.getOpenInventory().getTitle());
+		log.log(Level.INFO, "debug - " + player.getName() + " viewing " + playerview);
+		if (!playerview.isEmpty() && playerview.startsWith("[SELL")) {
+			playerviewshop = playerview.substring(playerview.indexOf("] ")+2, playerview.length());
+			log.log(Level.INFO, "debug - " + player.getName() + " viewing " + playerviewshop);
+			if (playerviewshop.equals(shopname)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	// strip out any text formatting
+	public String stripcolor(String input) {
+        return input == null?null:STRIP_COLOR_PATTERN.matcher(input).replaceAll("");
+    }
 }
