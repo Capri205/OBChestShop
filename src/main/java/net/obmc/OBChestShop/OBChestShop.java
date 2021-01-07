@@ -20,7 +20,6 @@ import net.obmc.OBChestShop.Tasks.ShopChecker;
 
 public class OBChestShop extends JavaPlugin {
 
-	//TODO: remove static when done
 	static Logger log = Logger.getLogger("Minecraft");
 
 	private static OBChestShop instance;

@@ -98,10 +98,11 @@ Obviously, if your inventory space is limited then some items will drop to the f
 
 ## Removing a shop
 Breaking a shop sign will result in the shop being removed and the shop stock being placed into the players inventory.
-Any excess stock is dropped on the ground. Breaking the last sign on the chest also removes the chest. Breaking a shop
-chest will remove ALL signs on the chest and therefore all shops associated with those signs. A chest can have 5
-signs/shops on it, but they can only be by the same owner. Alternatively there is a command to remove a shop by name.
-See the Commands section for more details.
+Any excess stock is dropped on the ground. Breaking the last sign on the chest also removes the chest, with any
+chest contents going onto the ground (note: chests contents aren't used by the shop or shop stock presently).
+Breaking a shop chest will remove ALL signs on the chest and therefore all shops associated with those signs.
+A chest can have up to 5 signs/shops on it, but they can only be by the same owner. Alternatively there is a command
+to remove a shop by name. See the Commands section for more details.
 
 ## Commands
 /obs or /obshop will bring up the available commands:<br>

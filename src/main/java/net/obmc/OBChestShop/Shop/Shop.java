@@ -775,16 +775,20 @@ public class Shop {
 	
 	// check if player accessing this shop in some way
 	public boolean isPlayerAccessing(Player player) {
-		String playerview = null;
-		String playerviewshop = null;
-		playerview = stripcolor(player.getOpenInventory().getTitle());
-		log.log(Level.INFO, "debug - " + player.getName() + " viewing " + playerview);
+		String playerview = stripcolor(player.getOpenInventory().getTitle());
 		if (!playerview.isEmpty() && playerview.startsWith("[SELL")) {
-			playerviewshop = playerview.substring(playerview.indexOf("] ")+2, playerview.length());
-			log.log(Level.INFO, "debug - " + player.getName() + " viewing " + playerviewshop);
+			String playerviewshop = playerview.substring(playerview.indexOf("] ")+2, playerview.length());
 			if (playerviewshop.equals(shopname)) {
 				return true;
 			}
+		}
+		return false;
+	}
+	
+	public boolean isPlayerAccessingItem(Player player, String itemname) {
+		String playerview = stripcolor(player.getOpenInventory().getTitle());
+		if (!playerview.isEmpty() && playerview.startsWith("[SELL " + itemname + "] " + shopname)) {
+			return true;
 		}
 		return false;
 	}

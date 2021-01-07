@@ -57,8 +57,6 @@ public class ShopRemoval implements Listener {
 	   						onlineplayer.closeInventory();
 	   						onlineplayer.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop " + shopname + " was removed!");
 	   						log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Force closed " + onlineplayer.getName() + "'s inventory view as shop " + shopname + " is being removed");
-	   					} else {
-	   						log.log(Level.INFO, "debug - " + onlineplayer.getName() + " no inventory open");
 	   					}
 	   				}
 

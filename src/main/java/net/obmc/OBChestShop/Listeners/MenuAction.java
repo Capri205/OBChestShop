@@ -115,7 +115,6 @@ public class MenuAction implements Listener {
 
 						ShopItem shopitem = shop.getShopItem(itemname);
 
-						// TODO: check for item gone from shop
 						// MENU BACK
 						if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
 							Selling sellmenu = new Selling(shopname, player);
@@ -151,8 +150,7 @@ public class MenuAction implements Listener {
 								debitamt = shopitem.getPrice() * 64;
 								numitems = shopitem.getAmount() * 64;
 							}
-							// deduct cost of items from player balance, give player their items, credit
-							// shop owner balance
+							// deduct cost of items from player balance, give player their items, credit shop owner
 							// TODO: add EconomyResponse ecr.type checking for not SUCCESS
 							OBChestShop.getEconomy().withdrawPlayer(player, debitamt);
 							shopitem.moveStockToInventory(player.getUniqueId().toString(), numitems);
@@ -344,6 +342,12 @@ public class MenuAction implements Listener {
 					// REMOVE ITEM
 					if (event.getRawSlot() == 8 && itemclicked.getType().name().equals("BARRIER") && clicktype == ClickType.LEFT) {
 						shopitem.moveStockToInventory(player.getUniqueId().toString(), shopitem.getStockQuantity());
+						for (Player onlineplayer : Bukkit.getOnlinePlayers()) {
+							if (shop.isPlayerAccessingItem(onlineplayer, itemname)) {
+		   						onlineplayer.closeInventory();
+		   						onlineplayer.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Item " + itemname + " was removed from shop!");
+							}
+						}
 						OBChestShop.getShopList().getShop(shopname).removeitem(itemname);
 						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Removed " + ChatColor.GRAY + itemname.toLowerCase() + ChatColor.GREEN + " from shop");
 						// TODO: close out other players menus if they have it open, or double check item still exists in shop before purchase
