@@ -27,7 +27,6 @@ public class Selling {
     public Selling(String shopname, Player player) {
         
     	this.shop = OBChestShop.getShopList().getShop(shopname);
-    	//TODO: Ensure we have a valid shop? Must have been in a shop to get from the menu to here.. but what if deleted by someone in the mean time?
 
     	this.player = player;
     	

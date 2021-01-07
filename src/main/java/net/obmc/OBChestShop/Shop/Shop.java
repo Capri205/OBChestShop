@@ -2,11 +2,9 @@ package net.obmc.OBChestShop.Shop;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -27,7 +25,6 @@ import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -166,13 +163,13 @@ public class Shop {
 		state = ShopState.ShopPreChecks;
 		// validate the actual blocks in the world are good
 
-		//TODO: load shop items
+		// load shop items
 		shopitems.clear();
 		ShopItem shopitem = null;
 		if (shopconfig.isConfigurationSection("Items")) {
             for (String itemtype : shopconfig.getConfigurationSection("Items").getKeys(false)) {
             	if (!shopitems.containsKey(itemtype)) {
-            		shopitem = new ShopItem(new ItemStack(Material.valueOf(itemtype), 1), shopconfig.getConfigurationSection("Items").getConfigurationSection(itemtype).getInt("Stock"));
+            		shopitem = new ShopItem(itemtype, shopconfig.getConfigurationSection("Items").getConfigurationSection(itemtype).getInt("Stock"));
             		shopitem.setPrice(shopconfig.getConfigurationSection("Items").getConfigurationSection(itemtype).getDouble("Price"));
             		shopitem.setAmount(shopconfig.getConfigurationSection("Items").getConfigurationSection(itemtype).getInt("Amount"));
             		shopitem.setStock(shopconfig.getConfigurationSection("Items").getConfigurationSection(itemtype).getInt("Stock"));
@@ -390,8 +387,6 @@ public class Shop {
 	}
 
 	// return the location of our chest and sign blocks
-	//TODO: exception encountered when breaking a block... I guess for a moment there's no block whilst it's being replaced by AIR?
-	//TODO: recode to not refer to block, but perhaps refer to shop variable instead? 
 	public Location getChestXYZ() {
 		return chestloc;
 	}
@@ -400,8 +395,6 @@ public class Shop {
 	}
 
 	// validate a shop is still valid - world, chest and sign blocks
-	//TODO: not checking shop config presently, but if performance is not an issue add in config file checks also
-	//TODO: move sections of constructor to here and have it call this instead of duplicating checks
 	public ShopState validateShop() {
 		
 		if (!maintenanceMode) {

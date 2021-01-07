@@ -292,7 +292,7 @@ public class MenuAction implements Listener {
 								}
 								ItemStack cloneitem = itemclicked.clone();
 								cloneitem.setAmount(1);
-								shop.addShopItem(cloneitem.getType().toString(), new ShopItem(cloneitem, stockchangeamount));
+								shop.addShopItem(cloneitem.getType().toString(), new ShopItem(cloneitem.getType().toString(), stockchangeamount));
 								event.getInventory().setItem(openslot, cloneitem);
 								itemclicked.setAmount(itemclicked.getAmount() - stockchangeamount);
 								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Added " + stockchangeamount + " " + ChatColor.GRAY + cloneitem.getType().name().toLowerCase() + ChatColor.GREEN + " to shop");
@@ -350,8 +350,6 @@ public class MenuAction implements Listener {
 						}
 						OBChestShop.getShopList().getShop(shopname).removeitem(itemname);
 						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Removed " + ChatColor.GRAY + itemname.toLowerCase() + ChatColor.GREEN + " from shop");
-						// TODO: close out other players menus if they have it open, or double check item still exists in shop before purchase
-						// TODO: raises a bigger issue of in-flight transactions and shop changes - need to test
 						Settings settingsmenu = new Settings(player, shopname);
 						settingsmenu.draw();
 					}
@@ -478,7 +476,7 @@ public class MenuAction implements Listener {
 							// prevent possible negative amounts being added - like changing stock limit lower when stock is actually higher
 							if (stockchangeamount > 0) {
 								// TODO: add boolean return on move inventory method
-								// TODO: also raises bigger issue of rollback of a failed transaction - need to test
+								// TODO: raises bigger issue of transaction integrity and rollback
 								shopitem.moveInventoryToStock(player.getUniqueId().toString(), stockchangeamount);
 								shopitem.addStock(stockchangeamount);
 							}
@@ -546,8 +544,7 @@ public class MenuAction implements Listener {
 		}
 	}
 
-	// TODO: see if we can't compact this down to one routine or three overloaded wrappers and a base routine
-	// Return a new double value from string, or return the current value
+	// Return a new sanitized double value from string, or return the current value
 	private Double SanitizePrice(Double currentprice, String newprice) {
 		String DOUBLE_PATTERN = "[0-9]*(\\.){0,1}\\d*";
 		String INTEGER_PATTERN = "\\d+";
@@ -578,14 +575,14 @@ public class MenuAction implements Listener {
 		return currentprice;
 	}
 
-	// return a new integer amount or the current amount if invalid
+	// return a new sanitized integer amount value or return the current amount if invalid
 	private int SanitizeAmount(Integer currentamount, String newamount) {
 		String INTEGER_PATTERN = "\\d+";
 		
 		if (Pattern.matches(INTEGER_PATTERN,  newamount)) {
 			Integer i = null;
 			try {
-				i = new Integer(newamount);
+				i = Integer.parseInt(newamount);
 			} catch (NumberFormatException e) {
 				log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Failed to create new amount of " + newamount);
 				e.printStackTrace();
@@ -602,14 +599,14 @@ public class MenuAction implements Listener {
 		return currentamount;
 	}
 	
-	// return a new integer amount or the current amount if invalid
+	// return a new sanitized integer limit or the current limit if invalid
 	private int SanitizeLimit(Integer currentlimit, Integer maxlimit, String newlimit) {
 		String INTEGER_PATTERN = "\\d+";
 
 		if (Pattern.matches(INTEGER_PATTERN,  newlimit)) {
 			Integer i = null;
 			try {
-				i = new Integer(newlimit);
+				i = Integer.parseInt(newlimit);
 			} catch (NumberFormatException e) {
 				log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Failed to create new limit of " + newlimit);
 				e.printStackTrace();

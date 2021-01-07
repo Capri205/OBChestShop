@@ -20,17 +20,12 @@ public class ItemSell {
 	
     private Player player;
     private Inventory inv;
-    private ShopItem shopitem;
     private Shop shop;
     
-    //TODO: change to pass playername and shopitemname
 	public ItemSell(Player player, String shopname, ShopItem shopitem) {
 		
 		this.player = player;
-		this.shopitem = shopitem;
     	this.shop = OBChestShop.getShopList().getShop(shopname);
-    	//TODO: Ensure we have a valid shop? Must have been in a shop to get from the menu to here.. but what if deleted by someone in the mean time?
-
     	inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[SELL " + shopitem.getItem().getType().name() + "]" + " " + ChatColor.DARK_GREEN + shopname);
     	inv.clear();
     	
@@ -54,8 +49,6 @@ public class ItemSell {
         	inv.setItem(i, divider);
         }
         
-        // BUY SELECTORS
-        Double playerbal = OBChestShop.getEconomy().getBalance(Bukkit.getOfflinePlayer(player.getUniqueId()));
         Boolean hasOne = shopitem.getStockQuantity() >= shopitem.getAmount();
         Boolean hasEight = shopitem.getStockQuantity() > shopitem.getAmount() * 8;
         Boolean hasQuarterStack = shopitem.getStockQuantity() > shopitem.getAmount() * 16;

@@ -1,9 +1,7 @@
 package net.obmc.OBChestShop.Menus;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -30,7 +28,6 @@ public class Settings {
 
     	this.player = player;
     	this.shop = OBChestShop.getShopList().getShop(shopname);
-    	//TODO: Ensure we have a valid shop? Must have been in a shop to get from the menu to here.. but what if deleted by someone in the mean time?
     	
     	inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[SETTINGS]" + " " + ChatColor.DARK_GREEN + shopname);
     	inv.clear();

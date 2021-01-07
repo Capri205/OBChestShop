@@ -4,7 +4,6 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -12,8 +11,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-
 import net.md_5.bungee.api.ChatColor;
 import net.obmc.OBChestShop.OBChestShop;
 
@@ -29,9 +26,8 @@ public class ShopItem {
     private String description = "";
     private DecimalFormat priceformatted = new DecimalFormat("#.00#");
     
-    //TODO: change to pass in itemname and create a new item stack in the constructor for this.item
-    public ShopItem(ItemStack item, int stocktoadd) {
-    	this.item = item;
+    public ShopItem(String itemname, int stocktoadd) {
+    	this.item = new ItemStack(Material.valueOf(itemname), 1);
     	this.price = 5.00;
     	this.amount = 1;
     	this.stock = stocktoadd;
@@ -177,10 +173,6 @@ public class ShopItem {
 		
 		Player player = Bukkit.getPlayer(UUID.fromString(playeruuid));
 		Inventory inv = player.getInventory();
-
-		// split quantity into a count of full and partial stacks and process
-		int fullstacks = quantitytomove / item.getMaxStackSize();
-		int partial = quantitytomove - (fullstacks * item.getMaxStackSize());
 
 		// iterate over inventory slots pulling whole or partial stacks into stock
 		int slot = 0;
