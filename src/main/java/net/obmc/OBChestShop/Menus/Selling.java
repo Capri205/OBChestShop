@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
 
 public class Selling {
@@ -75,22 +76,20 @@ public class Selling {
         	inv.setItem(i, divider);
         }
         
-        // load up shop items
-        String itemname;
+        // load up shop sell items into menu
         ShopItem shopitem = null;
         ItemStack item = null;
         ItemMeta itemmeta = null;
-        Iterator <String> isit = shop.getItems().keySet().iterator();
-        int slot = 18;
+        Iterator <Integer> isit = shop.getSellItems().keySet().iterator();
+        int slot;
         while (isit.hasNext()) {
-        	itemname = isit.next();
-        	shopitem = shop.getShopItem(itemname);
+        	slot = isit.next();
+        	shopitem = shop.getShopItem(ShopItemTypes.Sell, slot);
         	item = shopitem.getItem();
         	itemmeta = item.getItemMeta();
         	itemmeta.setLore(Arrays.asList(shopitem.getLoreSell().split(",")));
         	item.setItemMeta(itemmeta);
         	inv.setItem(slot, item);
-        	slot++;
         }
     }
     

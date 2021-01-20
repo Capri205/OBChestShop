@@ -14,6 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
 
 public class Settings {
@@ -24,7 +25,7 @@ public class Settings {
     private Inventory inv;
     private Player player;
 
-    public Settings(Player player, String shopname) {
+    public Settings(ShopItemTypes type, Player player, String shopname) {
 
     	this.player = player;
     	this.shop = OBChestShop.getShopList().getShop(shopname);
@@ -35,9 +36,10 @@ public class Settings {
     	ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();
         backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Back");
+        backMeta.setLocalizedName(type.toString());		// sneaky. need to hide some data for the menu action class to work off - such as shop list type
         back.setItemMeta(backMeta);
         inv.setItem(0, back);
-    	
+
     	ItemStack name = new ItemStack(Material.NAME_TAG);
         ItemMeta nameMeta = name.getItemMeta();
         nameMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Change Name");
@@ -81,23 +83,20 @@ public class Settings {
         }
         
         // load up shop items
-        String itemname;
+        int slot;
         ShopItem shopitem = null;
         ItemStack item = null;
         ItemMeta itemmeta = null;
-        Iterator <String> isit = shop.getItems().keySet().iterator();
-        int slot = 18;
+        Iterator<Integer> isit = shop.getShopItems(type).keySet().iterator();
         while (isit.hasNext()) {
-        	itemname = isit.next();
-        	shopitem = shop.getShopItem(itemname);
+        	slot = isit.next();
+        	shopitem = shop.getShopItem(type, slot);
         	item = shopitem.getItem();
         	itemmeta = item.getItemMeta();
         	itemmeta.setLore(Arrays.asList(shopitem.getLoreSettings().split(",")));
         	item.setItemMeta(itemmeta);
         	inv.setItem(slot, item);
-        	slot++;
         }
-
     }
     
     public void draw() {

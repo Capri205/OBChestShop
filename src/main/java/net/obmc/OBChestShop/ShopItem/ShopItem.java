@@ -13,20 +13,23 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import net.md_5.bungee.api.ChatColor;
 import net.obmc.OBChestShop.OBChestShop;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 
 public class ShopItem {
 
 	static Logger log = Logger.getLogger("Minecraft");
 
+	private int slot;
     private ItemStack item;
-    private String lore;
     private double price = 0.00;
     private int amount = 0;
     private int stock = 0;
     private String description = "";
+    private String lore;
     private DecimalFormat priceformatted = new DecimalFormat("#.00#");
     
-    public ShopItem(String itemname, int stocktoadd) {
+    public ShopItem(int slot, String itemname, int stocktoadd) {
+    	this.slot = slot;
     	this.item = new ItemStack(Material.valueOf(itemname), 1);
     	this.price = 5.00;
     	this.amount = 1;
@@ -38,10 +41,20 @@ public class ShopItem {
     	setLore();
     }
     
+    public int getSlot() {
+    	return slot;
+    }
+    public void setSlot(int slot) {
+    	this.slot = slot;
+    }
+    
     public ItemStack getItem() {
     	return item;
     }
-
+    public String getItemName() {
+    	return item.getType().name();
+    }
+    
 	public Double getPrice() {
 		return price;
 	}

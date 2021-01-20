@@ -1,6 +1,7 @@
 package net.obmc.OBChestShop.Menus;
 
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -8,9 +9,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
 
 public class ItemConfig {
@@ -19,7 +22,7 @@ public class ItemConfig {
 	
     private Player player;
     private Inventory inv;
-    public ItemConfig(Player player, String shopname, ShopItem shopitem) {
+    public ItemConfig(ShopItemTypes type, Player player, String shopname, ShopItem shopitem) {
 		
 		this.player = player;
 		inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[ITEM " + shopitem.getItem().getType().name() + "]" + " " + ChatColor.DARK_GREEN + shopname);
@@ -28,6 +31,7 @@ public class ItemConfig {
     	ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();
         backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Back");
+        backMeta.setLocalizedName(type.toString() + "#" + shopitem.getSlot());
         back.setItemMeta(backMeta);
         inv.setItem(0, back);
         
@@ -60,8 +64,8 @@ public class ItemConfig {
         // LORE CHANGE
         ItemStack lore = new ItemStack(Material.WHITE_TERRACOTTA, 1);
         ItemMeta loreMeta = price.getItemMeta();
-        loreMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Change item lore" );
-        loreMeta.setLore(Arrays.asList(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to change the" + ChatColor.LIGHT_PURPLE + " amount" + ChatColor.GRAY + " sold"));
+        loreMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Change item description" );
+        loreMeta.setLore(Arrays.asList(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to change the" + ChatColor.LIGHT_PURPLE + " description" + ChatColor.GRAY + " of the item"));
         lore.setItemMeta(loreMeta);
         inv.setItem(20,  lore);
         

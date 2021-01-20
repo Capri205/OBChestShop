@@ -1,5 +1,6 @@
 package net.obmc.OBChestShop.Menus;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -12,6 +13,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
 
 public class ItemSell {
@@ -32,6 +34,7 @@ public class ItemSell {
     	ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();
         backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Back");
+        backMeta.setLocalizedName(ShopItemTypes.Sell.toString() + "#" + shopitem.getSlot());
         back.setItemMeta(backMeta);
         inv.setItem(0, back);
         
