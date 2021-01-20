@@ -121,6 +121,9 @@ public class OnCommand implements CommandExecutor {
 						   					}
 						   				}
 						   				
+						    			// give owner or op the shop inventory
+						    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(player.getUniqueId().toString());
+						    			
 										OBChestShop.getShopList().removeShop(shopname);
 										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop Removed!");
 										log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + player.getName() + "  removed shop " + shopname);
