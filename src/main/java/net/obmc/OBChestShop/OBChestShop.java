@@ -102,7 +102,8 @@ public class OBChestShop extends JavaPlugin {
 	@Override
     public void onDisable() {
 		
-		// save out shops
+		// save out shops - no need to do this as we save on every change
+		// might come back to this later and perform saves only on specific changes and a final save
 		if (!shoplist.saveShops()) {
 			log.log(Level.INFO, getLogMsgPrefix() + "    Errors encountered saving shops");
 		}

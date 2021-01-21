@@ -118,15 +118,15 @@ public class LiveShopList {
 	
 	// save out the shop list 
 	public boolean saveShops() {
-		boolean errored = false;
+		boolean success = true;
 		Iterator<String> it = shoplist.keySet().iterator();
 		while(it.hasNext()) {
 			String shopname = it.next();
 			if (!shoplist.get(shopname).saveShop()) {
-				errored = true;
+				success = false;
 			}
 		}
-		return errored;
+		return success;
 	}
 
 	// retrieve a shop by name
