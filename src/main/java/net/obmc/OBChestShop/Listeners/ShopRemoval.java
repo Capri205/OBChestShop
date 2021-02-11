@@ -19,6 +19,7 @@ import org.bukkit.inventory.InventoryView;
 
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.Utils.BlockUtils;
 
 public class ShopRemoval implements Listener {
@@ -68,8 +69,9 @@ public class ShopRemoval implements Listener {
 	    			}
 	   			
 	    			// give player the shop inventory
-	    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(player.getUniqueId().toString());
-	    			
+	    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(ShopItemTypes.Sell, player.getUniqueId().toString());
+	    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(ShopItemTypes.Stock, player.getUniqueId().toString());
+
 	    			// remove shop from our active list
 	    			OBChestShop.getShopList().removeShop(shopname);
 					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.LIGHT_PURPLE + "'" + shopname + "' - " + ChatColor.GREEN + "Shop Removed!");
@@ -102,7 +104,8 @@ public class ShopRemoval implements Listener {
 	   					}
 	   					
 		    			// give player the shop inventory
-		    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(player.getUniqueId().toString());
+		    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(ShopItemTypes.Sell, player.getUniqueId().toString());
+		    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(ShopItemTypes.Stock, player.getUniqueId().toString());
 
 	   					// remove shop from our active list
 	   					OBChestShop.getShopList().removeShop(shopname);

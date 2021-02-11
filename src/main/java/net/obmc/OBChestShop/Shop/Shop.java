@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,8 +56,10 @@ public class Shop {
     private ShopState state;
     private Boolean maintenanceMode = false;
     
+    // TODO: break out into new ShopItemList class ?
     private Map<Integer, ShopItem> sellitems = new HashMap<Integer, ShopItem>();
     private Map<Integer, ShopItem> buyitems = new HashMap<Integer, ShopItem>();
+    private Map<Integer, ShopItem> stockitems = new HashMap<Integer, ShopItem>();
 
     private final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf('§') + "[0-9A-FK-OR]");
 
@@ -96,7 +99,6 @@ public class Shop {
 		if (stocklimit == -1 || stocklimit == null) {
 			stocklimit = OBChestShop.getInstance().getConfig().getInt("stocklimit");
 		}
-		
 		world = shopconfig.getString("World");
 		state = ShopState.ConfigOK;
 		
@@ -168,6 +170,7 @@ public class Shop {
 		sellitems.clear(); buyitems.clear();
 		LoadShopItems(ShopItemTypes.Sell);
 		LoadShopItems(ShopItemTypes.Buy);
+		LoadShopItems(ShopItemTypes.Stock);
 		
 		state = ShopState.ShopOK;
 	}
@@ -177,21 +180,30 @@ public class Shop {
 		String typestr = type.toString();
 		ShopItem shopitem = null;
 		if (shopconfig.getConfigurationSection("Items").isConfigurationSection(typestr)) {
-            for (String key : shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getKeys(false)) {
-            	int slot = Integer.parseInt(key);
-           		shopitem = new ShopItem(slot,            				
-           				shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getString("Item"),
-           				shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Stock"));
-           		shopitem.setPrice(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getDouble("Price"));
-           		shopitem.setAmount(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Amount"));
-           		shopitem.setStock(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Stock"));
-           		shopitem.setDescription(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getString("Description"));
-           		if (type.equals(ShopItemTypes.Sell)) {
-           			sellitems.put(slot, shopitem);
-           		} else {
-           			buyitems.put(slot,  shopitem);
-           		}
-            }
+			for (String key : shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getKeys(false)) {
+				int slot = Integer.parseInt(key);
+				if (type.equals(ShopItemTypes.Sell)) { 
+					shopitem = new ShopItem(slot,            				
+							shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getString("Item"),
+							shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Stock"));
+					shopitem.setPrice(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getDouble("Price"));
+					//shopitem.setStock(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Stock"));
+					shopitem.setDescription(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getString("Description"));
+					sellitems.put(slot, shopitem);
+				} else if (type.equals(ShopItemTypes.Buy)) {
+					shopitem = new ShopItem(slot,            				
+							shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getString("Item"),
+							0);
+					shopitem.setPrice(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getDouble("Price"));
+					buyitems.put(slot,  shopitem);
+				} else if (type.equals(ShopItemTypes.Stock)){
+					shopitem = new ShopItem(slot,            				
+							shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getString("Item"),
+							shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Stock"));
+					//shopitem.setStock(shopconfig.getConfigurationSection("Items").getConfigurationSection(typestr).getConfigurationSection(key).getInt("Stock"));
+					stockitems.put(slot,  shopitem);
+				}
+			}
 		}
 	}
 
@@ -214,6 +226,7 @@ public class Shop {
 		shopconfig.set("Owner", shopowner);
 		shopconfig.set("Open", false);
 		shopconfig.set("World", chestblock.getWorld().getName());
+		shopconfig.set("StockLimit", stocklimit);
 		state = ShopState.ConfigOK;
 		
 		data.put("Type",  chestblock.getType().toString());
@@ -245,7 +258,8 @@ public class Shop {
 		shopconfig.createSection("Items");
 		shopconfig.getConfigurationSection("Items").createSection("Sell");
 		shopconfig.getConfigurationSection("Items").createSection("Buy");
-		
+		shopconfig.getConfigurationSection("Items").createSection("Stock");
+
 		try {
 			shopconfig.save(shopfile);
 		} catch (IOException e) {
@@ -343,8 +357,6 @@ public class Shop {
     		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Sell.toString()).getConfigurationSection(slotstr).set("Slot", shopitem.getSlot());
     		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Sell.toString()).getConfigurationSection(slotstr).set("Item", shopitem.getItem().getType().name());
             shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Sell.toString()).getConfigurationSection(slotstr).set("Price", shopitem.getPrice());
-            shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Sell.toString()).getConfigurationSection(slotstr).set("Amount", shopitem.getAmount());
-            shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Sell.toString()).getConfigurationSection(slotstr).set("Stock", shopitem.getStockQuantity());
             shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Sell.toString()).getConfigurationSection(slotstr).set("Description", shopitem.getDescription());
 		}
         isit = buyitems.keySet().iterator();
@@ -355,11 +367,16 @@ public class Shop {
     		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Buy.toString()).getConfigurationSection(slotstr).set("Slot", shopitem.getSlot());
     		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Buy.toString()).getConfigurationSection(slotstr).set("Item", shopitem.getItem().getType().name());
             shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Buy.toString()).getConfigurationSection(slotstr).set("Price", shopitem.getPrice());
-            shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Buy.toString()).getConfigurationSection(slotstr).set("Amount", shopitem.getAmount());
-            shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Buy.toString()).getConfigurationSection(slotstr).set("Stock", shopitem.getStockQuantity());
-            shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Buy.toString()).getConfigurationSection(slotstr).set("Description", shopitem.getDescription());
 		}
-
+        isit = stockitems.keySet().iterator();
+        while (isit.hasNext()) {
+        	slot = isit.next(); slotstr = String.valueOf(slot);
+        	shopitem = this.getShopItem(ShopItemTypes.Stock, slot);
+    		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Stock.toString()).createSection(slotstr);
+    		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Stock.toString()).getConfigurationSection(slotstr).set("Slot", shopitem.getSlot());
+    		shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Stock.toString()).getConfigurationSection(slotstr).set("Item", shopitem.getItem().getType().name());
+            shopconfig.getConfigurationSection("Items").getConfigurationSection(ShopItemTypes.Stock.toString()).getConfigurationSection(slotstr).set("Stock", shopitem.getStockQuantity());
+		}
         try {
 			shopconfig.save(shopfile);
 		} catch (IOException e) {
@@ -428,6 +445,7 @@ public class Shop {
 	}
 
 	// validate a shop is still valid - world, chest and sign blocks
+	// TODO: break out into new validator class ?
 	public ShopState validateShop() {
 		
 		if (!maintenanceMode) {
@@ -689,16 +707,23 @@ public class Shop {
 	public Map<Integer, ShopItem> getShopItems(ShopItemTypes type) {
 		if (type.equals(ShopItemTypes.Sell)) {
 			return sellitems;
-		} else {
+		} else if (type.equals(ShopItemTypes.Buy)){
 			return buyitems;
 		}
+		return stockitems;
 	}
 	public int getItemSlotByName(ShopItemTypes type, String itemname) {
 		Collection<ShopItem> items = null;
-		if (type.equals(ShopItemTypes.Sell)) {
-			items = sellitems.values();
-		} else {
-			items = buyitems.values();
+		switch (type) {
+			case Sell:
+				items = sellitems.values();
+				break;
+			case Buy:
+				items = buyitems.values();
+				break;
+			case Stock:
+				items = stockitems.values();
+				break;
 		}
 		for (ShopItem item : items) {
 			if (item.getItemName().equals(itemname)) {
@@ -713,18 +738,30 @@ public class Shop {
 	public Map<Integer, ShopItem> getBuyItems() {
 		return buyitems;
 	}
+	public Map<Integer, ShopItem> getStockItems() {
+		return stockitems;
+	}
 	public Set<Integer> getSellItemList() {
 		return sellitems.keySet();
 	}
 	public Set<Integer> getBuyItemList() {
 		return buyitems.keySet();
 	}
+	public Set<Integer> getStockItemList() {
+		return stockitems.keySet();
+	}
 	public Boolean itemListContains(ShopItemTypes type, String itemname) {
 		Collection<ShopItem> items = null;
-		if (type.equals(ShopItemTypes.Sell)) {
-			items = sellitems.values();
-		} else {
-			items = buyitems.values();
+		switch (type) {
+			case Sell:
+				items = sellitems.values();
+				break;
+			case Buy:
+				items = buyitems.values();
+				break;
+			case Stock:
+				items = stockitems.values();
+				break;
 		}
 		for (ShopItem item : items) {
 			if (item.getItemName().equals(itemname)) {
@@ -736,23 +773,28 @@ public class Shop {
 	
 	// add a new item to the shop
 	public void addShopItem(ShopItemTypes type, ShopItem shopitem) {
-		// put into the appropriate list
-		if (type.equals(ShopItemTypes.Sell)) {
-			sellitems.put(shopitem.getSlot(), shopitem);
-		} else {
-			buyitems.put(shopitem.getSlot(), shopitem);
-		}
 		String slot = String.valueOf(shopitem.getSlot());
    		shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).createSection(slot);
-		shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Slot", shopitem.getSlot());
+		shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Slot", slot);
 		shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Item", shopitem.getItem().getType().name());
-        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Price", 5.0);
-        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Amount", 1);
-        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Stock", shopitem.getStockQuantity());
-        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Description", "");
+		switch (type) {
+			case Sell:
+				sellitems.put(Integer.parseInt(slot), shopitem);
+		        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Price", 5.0);
+		        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Description", "");
+		        break;
+			case Buy:
+				buyitems.put(Integer.parseInt(slot), shopitem);
+		        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Price", 2.50);
+				break;
+			case Stock:
+				stockitems.put(Integer.parseInt(slot), shopitem);
+		        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(slot).set("Stock", shopitem.getStockQuantity());
+				break;
+		}
         ItemStack item = shopitem.getItem();
         ItemMeta itemmeta = item.getItemMeta();
-    	itemmeta.setLore(Arrays.asList(shopitem.getLore().split(",")));
+    	itemmeta.setLore(Arrays.asList(shopitem.getLore(shopname, type).split(",")));
     	item.setItemMeta(itemmeta);
         try {
 			shopconfig.save(shopfile);
@@ -763,14 +805,47 @@ public class Shop {
 	public ShopItem getShopItem(ShopItemTypes type, int slot) {
 		if (type.equals(ShopItemTypes.Sell)) {
 			return sellitems.get(slot);
+		} else if (type.equals(ShopItemTypes.Buy)) {
+			return buyitems.get(slot);
+		} else {
+			return stockitems.get(slot);
 		}
-		return buyitems.get(slot);
+	}
+
+	public ShopItem getShopItem(ShopItemTypes type, String itemname) {
+		Map<Integer, ShopItem> itemlist = null;
+		switch (type) {
+			case Sell:
+				itemlist = sellitems;
+				break;
+			case Buy:
+				itemlist = buyitems;
+				break;
+			case Stock:
+				itemlist = stockitems;
+				break;
+		}
+		Iterator<Integer> it = itemlist.keySet().iterator();
+		ShopItem item = null;
+		while (it.hasNext()) {
+			item = itemlist.get(it.next());
+			if (item.getItem().getType().name().equals(itemname)) {
+				return item;
+			}
+		}
+		return null;
 	}
 	public void removeitem(ShopItemTypes type, int slot) {
-		if (type.equals(ShopItemTypes.Sell)) {
-			sellitems.remove(slot);
-		} else {
-			buyitems.remove(slot);
+		switch (type) {
+			case Sell:
+				sellitems.remove(slot);
+				break;
+			case Buy:
+				buyitems.remove(slot);
+				break;
+			case Stock:
+				stockitems.remove(slot);
+				break;
 		}
 		shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).set(String.valueOf(slot), null);
         try {
@@ -780,12 +855,14 @@ public class Shop {
 		}
 	}
 	public void addItemStock(ShopItemTypes type, int slot, int stocktoadd) {
-		if (type.equals(ShopItemTypes.Sell)) {
-			sellitems.get(slot).addStock(stocktoadd);
-	        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", sellitems.get(slot).getStockQuantity());
-		} else {
-			buyitems.get(slot).addStock(stocktoadd);
-	        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", buyitems.get(slot).getStockQuantity());
+		switch (type) {
+			case Sell:
+				sellitems.get(slot).addStock(stocktoadd);
+		        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", sellitems.get(slot).getStockQuantity());
+		        break;
+			case Stock:
+				stockitems.get(slot).addStock(stocktoadd);
+		        shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", buyitems.get(slot).getStockQuantity());
 		}
         try {
 			shopconfig.save(shopfile);
@@ -794,12 +871,14 @@ public class Shop {
 		}
 	}
 	public void removeItemStock(ShopItemTypes type, int slot, int stocktoremove) {
-		if (type.equals(ShopItemTypes.Sell)) {
-			sellitems.get(slot).removeStock(stocktoremove);
-			shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", sellitems.get(slot).getStockQuantity());
-		} else {
-			sellitems.get(slot).removeStock(stocktoremove);
-			shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", buyitems.get(slot).getStockQuantity());
+		switch (type) {
+			case Sell:
+				sellitems.get(slot).removeStock(stocktoremove);
+				shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", sellitems.get(slot).getStockQuantity());
+				break;
+			case Stock:
+				stockitems.get(slot).removeStock(stocktoremove);
+				shopconfig.getConfigurationSection("Items").getConfigurationSection(type.toString()).getConfigurationSection(String.valueOf(slot)).set("Stock", stockitems.get(slot).getStockQuantity());
 		}
         try {
 			shopconfig.save(shopfile);
@@ -809,36 +888,60 @@ public class Shop {
 	}
 
 	public Boolean hasSpace(ShopItemTypes type) {
-		if (type.equals(ShopItemTypes.Sell)) {
-			if (sellitems.size() < 36) {
-				return true;
-			}
-		} else {
-			if (buyitems.size() < 36) {
-				return true;
-			}
+		switch(type) {
+			case Sell:
+				if (sellitems.size() < 36) {
+					return true;
+				}
+				break;
+			case Buy:
+				if (buyitems.size() < 36) {
+					return true;
+				}
+				break;
 		}
 		return false;
 	}
 	public int getNextOpenSlot(ShopItemTypes type) {
-		for (int slot = 18; slot < 54; slot++) {
-			if (type.equals(ShopItemTypes.Sell)) {
-				if (!sellitems.containsKey(slot)) {
-					return slot;
-				}
-			} else {
-				if (!buyitems.containsKey(slot)) {
-					return slot;
-				}
+		int maxslot = 54;
+		if (type.equals(ShopItemTypes.Stock)) {
+			maxslot = ((54-18)*2)+18;
+		}
+		for (int slot = 18; slot < (maxslot+1); slot++) {
+			switch (type) {
+				case Sell:
+					if (!sellitems.containsKey(slot)) {
+						return slot;
+					}
+					break;
+				case Buy:
+					if (!buyitems.containsKey(slot)) {
+						return slot;
+					}
+					break;
+				case Stock:
+					if (!stockitems.containsKey(slot)) {
+						return slot;
+					}
+					break;
 			}
 		}
 		return -1;
 	}
 
-	// give the player all stock sell items
-	public void moveAllStockToInventory(String playeruuid) {
-		for (int slot : sellitems.keySet()) {
-			ShopItem shopitem = sellitems.get(slot);
+	// give the player all stock of a shop item
+	public void moveAllStockToInventory(ShopItemTypes type, String playeruuid) {
+		Map<Integer, ShopItem> itemlist = null;
+		switch (type) {
+			case Sell:
+				itemlist = sellitems;
+				break;
+			case Stock:
+				itemlist = stockitems;
+				break;
+		}
+		for (int slot : itemlist.keySet()) {
+			ShopItem shopitem = itemlist.get(slot);
 			shopitem.moveStockToInventory(playeruuid, shopitem.getStockQuantity());
 		}
 	}

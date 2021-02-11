@@ -25,7 +25,7 @@ public class Settings {
     private Inventory inv;
     private Player player;
 
-    public Settings(ShopItemTypes type, Player player, String shopname) {
+    public Settings(ShopItemTypes type, Player player, String shopname, int page) {
 
     	this.player = player;
     	this.shop = OBChestShop.getShopList().getShop(shopname);
@@ -36,7 +36,7 @@ public class Settings {
     	ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();
         backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Back");
-        backMeta.setLocalizedName(type.toString());		// sneaky. need to hide some data for the menu action class to work off - such as shop list type
+        backMeta.setLocalizedName(type.toString() + "#" + String.valueOf(page));
         back.setItemMeta(backMeta);
         inv.setItem(0, back);
 
@@ -77,25 +77,71 @@ public class Settings {
         open.setItemMeta(openMeta);
         inv.setItem(8, open);
         
-        ItemStack divider = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        for (int i = 9; i < 18; i++) {
-        	inv.setItem(i, divider);
-        }
-        
+        // determine divider style and navigation buttons based on list and number of items in the list
+        int pagesize = 36;
+    	int numpages = 0;
+    	ItemStack divider = null;
+    	switch (type) {
+    	case Sell:
+    		numpages = (int) Math.ceil((double)shop.getSellItemList().size() / pagesize);
+    		divider = new ItemStack(Material.ORANGE_STAINED_GLASS_PANE);
+    		break;
+    	case Buy:
+    		numpages = (int) Math.ceil((double)shop.getBuyItemList().size() / pagesize);
+    		divider = new ItemStack(Material.CYAN_STAINED_GLASS_PANE);
+    		break;
+    	case Stock:
+    		numpages = (int) Math.ceil((double)shop.getStockItemList().size() / pagesize);
+    		divider = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+    		break;
+    	}
+    	ItemStack prevdivider = new ItemStack(Material.GHAST_TEAR);
+    	ItemMeta prevdividerMeta = prevdivider.getItemMeta();
+    	prevdividerMeta.setDisplayName("Previous Page");
+    	
+    	ItemStack nextdivider = new ItemStack(Material.GOLD_NUGGET);
+    	ItemMeta nextdividerMeta = nextdivider.getItemMeta();
+    	nextdividerMeta.setDisplayName("Next Page");
+
+    	if (numpages <= 1) {
+    		for (int i = 9; i < 18; i++) {
+    			inv.setItem(i, divider);
+    		}
+    	} else {
+    		if (page == numpages && numpages > 1) {
+    			inv.setItem(9, prevdivider);
+    			inv.setItem(17, divider);
+    		}
+    		if (page == 1 && numpages > 1) {
+    			inv.setItem(9, divider);
+    			inv.setItem(17, nextdivider);
+    		}
+    		if (page != 1 && page != numpages) {
+    			inv.setItem(9, prevdivider);
+    			inv.setItem(17, nextdivider);
+    		}
+    		for (int i = 10; i < 17; i++) {
+    			inv.setItem(i, divider);
+    		}
+    	}
         // load up shop items
         int slot;
         ShopItem shopitem = null;
         ItemStack item = null;
         ItemMeta itemmeta = null;
         Iterator<Integer> isit = shop.getShopItems(type).keySet().iterator();
+        int startslot = 18 + ((page-1)*pagesize);
+        int endslot = 53 + ((page-1)*pagesize);
         while (isit.hasNext()) {
         	slot = isit.next();
-        	shopitem = shop.getShopItem(type, slot);
-        	item = shopitem.getItem();
-        	itemmeta = item.getItemMeta();
-        	itemmeta.setLore(Arrays.asList(shopitem.getLoreSettings().split(",")));
-        	item.setItemMeta(itemmeta);
-        	inv.setItem(slot, item);
+        	if (slot >= startslot && slot <= endslot) {
+        		shopitem = shop.getShopItem(type, slot);
+        		item = shopitem.getItem();
+            	itemmeta = item.getItemMeta();
+            	itemmeta.setLore(Arrays.asList(shopitem.getLoreSettings(shopname, type).split(",")));
+            	item.setItemMeta(itemmeta);
+            	inv.setItem(slot-((page-1)*pagesize), item);
+        	}
         }
     }
     

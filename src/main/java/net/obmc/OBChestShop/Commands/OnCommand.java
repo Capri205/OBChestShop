@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.ShopStates.ShopState;
 import net.obmc.OBChestShop.Shop.Shop;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 
 
 public class OnCommand implements CommandExecutor {
@@ -122,7 +123,8 @@ public class OnCommand implements CommandExecutor {
 						   				}
 						   				
 						    			// give owner or op the shop inventory
-						    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(player.getUniqueId().toString());
+						    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(ShopItemTypes.Sell, player.getUniqueId().toString());
+						    			OBChestShop.getShopList().getShop(shopname).moveAllStockToInventory(ShopItemTypes.Stock, player.getUniqueId().toString());
 						    			
 										OBChestShop.getShopList().removeShop(shopname);
 										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop Removed!");

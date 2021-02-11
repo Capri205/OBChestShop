@@ -2,7 +2,6 @@ package net.obmc.OBChestShop.Menus;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -12,12 +11,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
 
-public class Selling {
+public class Buying {
 
 	Logger log = Logger.getLogger("Minecraft");
 
@@ -25,10 +25,9 @@ public class Selling {
     private Inventory inv;
     private Player player;
 
-    public Selling(String shopname, Player player) {
-
+    public Buying(String shopname, Player player) {
+        
     	this.shop = OBChestShop.getShopList().getShop(shopname);
-
     	this.player = player;
     	
     	Boolean isowner = false;
@@ -36,7 +35,7 @@ public class Selling {
     		isowner = true;
     	}
         
-        inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[SELL]" + " " + ChatColor.DARK_GREEN + shopname);
+        inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[BUY]" + " " + ChatColor.DARK_GREEN + shopname);
         inv.clear();
         
     	ItemStack close = new ItemStack(Material.ARROW);
@@ -45,9 +44,9 @@ public class Selling {
         close.setItemMeta(backMeta);
         inv.setItem(0, close);
         
-        ItemStack buymenu = new ItemStack(Material.SOUL_LANTERN);
+        ItemStack buymenu = new ItemStack(Material.LANTERN);
         ItemMeta buymenuMeta = buymenu.getItemMeta();
-        buymenuMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Buy menu (shop buy's from player)");
+        buymenuMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Sell menu (shop sell's to player)");
         buymenu.setItemMeta(buymenuMeta);
         inv.setItem(2, buymenu);
         
@@ -75,7 +74,7 @@ public class Selling {
         options.setItemMeta(optionsMeta);
     	inv.setItem(8, options);
     	
-    	ItemStack divider = new ItemStack(Material.ORANGE_STAINED_GLASS_PANE);
+    	ItemStack divider = new ItemStack(Material.CYAN_STAINED_GLASS_PANE);
         for (int i = 9; i < 18; i++) {
         	inv.setItem(i, divider);
         }
@@ -84,14 +83,14 @@ public class Selling {
         ShopItem shopitem = null;
         ItemStack item = null;
         ItemMeta itemmeta = null;
-        Iterator <Integer> isit = shop.getSellItems().keySet().iterator();
+        Iterator <Integer> isit = shop.getBuyItems().keySet().iterator();
         int slot;
         while (isit.hasNext()) {
         	slot = isit.next();
-        	shopitem = shop.getShopItem(ShopItemTypes.Sell, slot);
+        	shopitem = shop.getShopItem(ShopItemTypes.Buy, slot);
         	item = shopitem.getItem();
         	itemmeta = item.getItemMeta();
-        	itemmeta.setLore(Arrays.asList(shopitem.getLore(shopname, ShopItemTypes.Sell).split(",")));
+        	itemmeta.setLore(Arrays.asList(shopitem.getLore(shopname, ShopItemTypes.Buy).split(",")));
         	item.setItemMeta(itemmeta);
         	inv.setItem(slot, item);
         }
@@ -100,5 +99,4 @@ public class Selling {
     public void draw() {
     	player.openInventory(inv);
     }
-
 }

@@ -1,5 +1,7 @@
 package net.obmc.OBChestShop;
 
+import java.util.Iterator;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,11 +13,14 @@ import org.bukkit.scheduler.BukkitTask;
 
 import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
+
 import net.obmc.OBChestShop.Commands.OnCommand;
 import net.obmc.OBChestShop.Listeners.MenuAction;
 import net.obmc.OBChestShop.Listeners.ShopCreation;
 import net.obmc.OBChestShop.Listeners.ShopOpen;
 import net.obmc.OBChestShop.Listeners.ShopRemoval;
+import net.obmc.OBChestShop.Menus.MenuTypes;
+import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.Tasks.ShopChecker;
 
 public class OBChestShop extends JavaPlugin {
@@ -30,10 +35,15 @@ public class OBChestShop extends JavaPlugin {
 	private static LiveShopList shoplist = new LiveShopList();
 	private static PluginConfig config = new PluginConfig();
 	private static Economy economy = null;
+	
+    public static Stack<MenuTypes> menunav;
+
 
 	public OBChestShop() {
 		
 		instance = this;
+		
+		menunav = new Stack<MenuTypes>();
 		
 		if (config == null) {
 			config = new PluginConfig();

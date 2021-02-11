@@ -4,6 +4,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -13,6 +14,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import net.md_5.bungee.api.ChatColor;
 import net.obmc.OBChestShop.OBChestShop;
+import net.obmc.OBChestShop.Menus.MenuTypes;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
 
 public class ShopItem {
@@ -22,23 +24,19 @@ public class ShopItem {
 	private int slot;
     private ItemStack item;
     private double price = 0.00;
-    private int amount = 0;
     private int stock = 0;
     private String description = "";
-    private String lore;
-    private DecimalFormat priceformatted = new DecimalFormat("#.00#");
+    private DecimalFormat priceformatted = new DecimalFormat("#0.00#");
     
     public ShopItem(int slot, String itemname, int stocktoadd) {
     	this.slot = slot;
     	this.item = new ItemStack(Material.valueOf(itemname), 1);
     	this.price = 5.00;
-    	this.amount = 1;
     	this.stock = stocktoadd;
     	this.description = "";
     	this.priceformatted.setRoundingMode(RoundingMode.HALF_UP);
     	this.priceformatted.setGroupingUsed(false);
     	this.priceformatted.setMaximumFractionDigits(2);
-    	setLore();
     }
     
     public int getSlot() {
@@ -61,61 +59,62 @@ public class ShopItem {
 	public String getPriceFormatted() {
 		return priceformatted.format(price);
 	}
+	public String getPriceFormatted(int multiplier) {
+		return priceformatted.format(price * multiplier);
+	}
 	public void setPrice(Double price) {
 		this.price = price;
-		setLore();
-	}
-	
-	public Integer getAmount() {
-		return amount;
-	}
-	public void setAmount(int amount) {
-		this.amount = amount;
-		setLore();
 	}
 	
 	public void addStock(int quantity) {
 		this.stock += quantity;
-		setLore();
 	}
 	public void removeStock(int quantity) {
 		if (this.stock >= quantity) {
 			this.stock -= quantity;
 		}
-		setLore();
 	}
 	public int getStockQuantity() {
 		return this.stock;
 	}
 	public void setStock(int quantity) {
 		this.stock = quantity;
-		setLore();
 	}
 	
-	public String getLore() {
-		return lore;
-	}
-	public void setLore(String lore) {
-		this.lore = lore;
-	}
-	
-	private void setLore() {
-		this.lore = "";
-		if (!description.isEmpty()) {
-			this.lore = ChatColor.AQUA + description + ",";
+	public String getLore(String shopname, ShopItemTypes type) {
+		String lore = "";
+		if (!description.isEmpty() && type.equals(ShopItemTypes.Sell)) {
+			lore += ChatColor.AQUA + description + ",";
 		}
-    	this.lore += ChatColor.YELLOW + "Price: " + priceformatted.format(price) + "," +
-				ChatColor.YELLOW + "Amount: " + amount + "," +
-    			ChatColor.YELLOW + "Stock: " + stock +",";
-	}
-	public String getLoreSell() {
-		String lore = getLore();
-		lore += ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + "," +
-				ChatColor.YELLOW + "" + ChatColor.BOLD + "Shift Click" + ChatColor.GRAY + " to add to " + ChatColor.GREEN + "cart";
+		if (!type.equals(ShopItemTypes.Stock)) {
+			lore += ChatColor.YELLOW + "Price: " + priceformatted.format(price) + ",";
+		}
+		if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Stock)) {
+			if (type.equals(ShopItemTypes.Sell)) {
+				lore += ChatColor.YELLOW + "Stock: " + OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Stock, this.getItemName()).getStockQuantity() + ",";
+			} else {
+				lore += ChatColor.YELLOW + "Stock: " + stock + ",";
+			}
+		}
+		if (!type.equals(ShopItemTypes.Stock)) {
+			lore += ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to " +
+					(type.equals(ShopItemTypes.Sell) ? "buy" : "sell" ) + ",";
+		} else {
+			lore += ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to manage";
+		}
 		return lore;
 	}
-	public String getLoreSettings() {
-		String lore = getLore();
+	public String getLoreSettings(String shopname, ShopItemTypes type) {
+		String lore = "";
+		if (!description.isEmpty() && type.equals(ShopItemTypes.Sell)) {
+			lore += ChatColor.AQUA + description + ",";
+		}
+		if (!type.equals(ShopItemTypes.Stock)) {
+			lore += ChatColor.YELLOW + "Price: " + priceformatted.format(price) + ",";
+		}
+		if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Stock)) {
+			lore += ChatColor.YELLOW + "Stock: " + OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Stock, this.getItemName()).getStockQuantity() + ",";
+		}
 		lore += ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to configure item" + ",";
 		return lore;
 	}
@@ -125,7 +124,6 @@ public class ShopItem {
 	}
 	public void setDescription(String description) {
 		this.description = description;
-		setLore();
 	}
 	
 	// move stock to a player inventory - fill up inventory and drop excess on the ground
@@ -137,13 +135,11 @@ public class ShopItem {
 		// split quantity into a count of full and partial stacks and process
 		int fullstacks = quantitytomove / item.getMaxStackSize();
 		int partial = quantitytomove - (fullstacks * item.getMaxStackSize());
-
 		int invaddedtotal = 0;
 		int droppedtotal = 0;
 		int invaddqty = 0;
 		while (quantitytomove > 0) {
 			// set stack quantity
-			//ItemStack moveitem = item.clone();
 			ItemStack moveitem = new ItemStack(Material.valueOf(item.getType().name()));
 			moveitem.setAmount(0);
 			if (partial > 0) {
@@ -172,6 +168,7 @@ public class ShopItem {
 				droppedtotal += moveitem.getAmount();
 			}
 		}
+		this.removeStock(invaddedtotal + droppedtotal);
 		// report quantity moved
 		String movemsg = OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + invaddedtotal + " " + ChatColor.GRAY
 				+ item.getType().name().toLowerCase() + ChatColor.GREEN + " placed into inventory";
@@ -205,7 +202,6 @@ public class ShopItem {
 			}
 			slot++;
 		}
-		player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + stockaddedtotal + " " +
-				ChatColor.GRAY + item.getType().name().toLowerCase() + ChatColor.GREEN + " placed into stock");
+		this.addStock(stockaddedtotal);
 	}
 }

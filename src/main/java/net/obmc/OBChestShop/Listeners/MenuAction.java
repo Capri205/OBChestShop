@@ -23,9 +23,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Menus.Selling;
+import net.obmc.OBChestShop.Menus.Buying;
+import net.obmc.OBChestShop.Menus.ItemBuy;
 import net.obmc.OBChestShop.Menus.ItemConfig;
 import net.obmc.OBChestShop.Menus.ItemSell;
+import net.obmc.OBChestShop.Menus.MenuTypes;
 import net.obmc.OBChestShop.Menus.Settings;
+import net.obmc.OBChestShop.Menus.StockRoom;
 import net.obmc.OBChestShop.Shop.Shop;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
@@ -64,29 +68,46 @@ public class MenuAction implements Listener {
 				
 				Shop shop = OBChestShop.getShopList().getShop(shopname);
 				ItemStack itemclicked = event.getCurrentItem();
-
+		    	
 				//
 				// SELL MENU
 				//
 				if (shopview.startsWith("[SELL] ")) {
 
 					event.setCancelled(true);
+					
+					// clear menu navigation stack (players can exit menus at any point, so stack might contain data)
+					if (OBChestShop.menunav.size() > 0) {
+						OBChestShop.menunav.clear();
+					}
 
 					// MENU BACK
 					if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
 						player.closeInventory();
 					}
 
+					// BUY MENU
+					if (event.getRawSlot() == 2 && itemclicked.getType().name().equals("SOUL_LANTERN") && clicktype == ClickType.LEFT) {
+						OBChestShop.menunav.push(MenuTypes.Sell);
+						Buying buymenu = new Buying(shopname, player);
+						buymenu.draw();
+					}
+					//TODO: fix this illogical structure of conditionals...
 					if (event.getRawSlot() < 18) {
-						// TODO: coming soon - shopping cart
-						if (itemclicked.getType().name().equals("CHEST") && clicktype == ClickType.LEFT) {
+
+						// store room menu
+						if (event.getRawSlot() == 4 && itemclicked.getType().name().equals("CHEST") && clicktype == ClickType.LEFT) {
+							OBChestShop.menunav.push(MenuTypes.Sell);
+							StockRoom stockmenu = new StockRoom(shopname, player, 1);
+							stockmenu.draw();
 						}
 
 						// go to settings menu
 						if (itemclicked.getType().name().equals("ENDER_CHEST") && clicktype == ClickType.LEFT ) {
 							if (OBChestShop.getShopList().shopExists(shopname)) {
-								if (player.getUniqueId().toString().equals(OBChestShop.getShopList().getShop(shopname).getOwner())) {				
-									Settings settingsmenu = new Settings(ShopItemTypes.Sell, player, shopname);
+								if (player.getUniqueId().toString().equals(OBChestShop.getShopList().getShop(shopname).getOwner())) {
+									OBChestShop.menunav.push(MenuTypes.Sell);
+									Settings settingsmenu = new Settings(ShopItemTypes.Sell, player, shopname, 1);
 									settingsmenu.draw();
 								}
 							} else {
@@ -98,28 +119,80 @@ public class MenuAction implements Listener {
 					} else if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
 						// lines 3 ~ 6 buy item
 						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Sell, event.getRawSlot());
+						OBChestShop.menunav.push(MenuTypes.Sell);
 						ItemSell itemsell = new ItemSell(player, shopname, shopitem);
 						itemsell.draw();
 					}
 
-					//
-					// SELL ITEM MENU
-					//
+				//
+				// BUY MENU
+				//
+				} else if (shopview.startsWith("[BUY] ")) {
+
+					event.setCancelled(true);
+
+					// MENU BACK
+					if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
+						OBChestShop.menunav.pop();
+						Selling sellmenu = new Selling(shopname, player);
+						sellmenu.draw();
+					}
+
+					// SELL MENU
+					if (event.getRawSlot() == 2 && itemclicked.getType().name().equals("LANTERN") && clicktype == ClickType.LEFT) {
+						OBChestShop.menunav.clear();
+						Selling sellmenu = new Selling(shopname, player);
+						sellmenu.draw();
+					}
+					
+					if (event.getRawSlot() < 18) {
+
+						// store room menu
+						if (event.getRawSlot() == 4 && itemclicked.getType().name().equals("CHEST") && clicktype == ClickType.LEFT) {
+							OBChestShop.menunav.push(MenuTypes.Buy);
+							StockRoom stockmenu = new StockRoom(shopname, player, 1);
+							stockmenu.draw();
+						}
+
+						// go to settings menu
+						if (itemclicked.getType().name().equals("ENDER_CHEST") && clicktype == ClickType.LEFT ) {
+							if (OBChestShop.getShopList().shopExists(shopname)) {
+								if (player.getUniqueId().toString().equals(OBChestShop.getShopList().getShop(shopname).getOwner())) {
+									OBChestShop.menunav.push(MenuTypes.Buy);
+									Settings settingsmenu = new Settings(ShopItemTypes.Buy, player, shopname, 1);
+									settingsmenu.draw();
+								}
+							} else {
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Oops. The shop appears to have been removed");
+								log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Shop " + shopname + " appears to have been removed");
+								player.closeInventory();
+							}
+						}
+					} else if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
+						// lines 3 ~ 6 buy item
+						OBChestShop.menunav.push(MenuTypes.Buy);
+						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Buy, event.getRawSlot());
+						ItemBuy itembuy = new ItemBuy(player, shopname, shopitem);
+						itembuy.draw();
+					}
+
+				//
+				// SELL ITEM MENU
+				//
 				} else if (shopview.startsWith("[SELL ")) {
 
 					event.setCancelled(true);
 
 					if (OBChestShop.getShopList().shopExists(shopname)) {
 
-						// extract our hidden info - type and item slot
-						ShopItemTypes type = ShopItemTypes.valueOf(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[0]);
+						// extract our hidden info - item slot
 						int itemslot = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[1]);
-						
 						ShopItem shopitem = shop.getShopItem(ShopItemTypes.Sell, itemslot);
-						
+						ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItem().getType().name());
 
 						// MENU BACK
 						if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
+							OBChestShop.menunav.pop();
 							Selling sellmenu = new Selling(shopname, player);
 							sellmenu.draw();
 
@@ -131,40 +204,36 @@ public class MenuAction implements Listener {
 							if (event.getRawSlot() == 27 && itemclicked.getType().name().equals("LIME_WOOL") && clicktype == ClickType.LEFT) {
 								// process purchase of one item
 								debitamt = shopitem.getPrice();
-								numitems = shopitem.getAmount();
+								numitems = 1;
 							}
 							if (event.getRawSlot() == 28 && itemclicked.getType().name().equals("LIME_CONCRETE") && clicktype == ClickType.LEFT) {
 								// process purchase of eight items
 								debitamt = shopitem.getPrice() * 8;
-								numitems = shopitem.getAmount() * 8;
+								numitems = 8;
 							}
 							if (event.getRawSlot() == 29 && itemclicked.getType().name().equals("LIME_TERRACOTTA") && clicktype == ClickType.LEFT) {
 								// process purchase of quarter stack (16 items)
 								debitamt = shopitem.getPrice() * 16;
-								numitems = shopitem.getAmount() * 16;
+								numitems = 16;
 							}
 							if (event.getRawSlot() == 30 && itemclicked.getType().name().equals("GREEN_CONCRETE_POWDER") && clicktype == ClickType.LEFT) {
 								// process purchase of half stack (32 items)
 								debitamt = shopitem.getPrice() * 32;
-								numitems = shopitem.getAmount() * 32;
+								numitems = 32;
 							}
 							if (event.getRawSlot() == 31 && itemclicked.getType().name().equals("GREEN_CONCRETE") && clicktype == ClickType.LEFT) {
 								// process purchase of one stack (64 items)
 								debitamt = shopitem.getPrice() * 64;
-								numitems = shopitem.getAmount() * 64;
+								numitems = 64;
 							}
 							// deduct cost of items from player balance, give player their items, credit shop owner
 							// TODO: add EconomyResponse ecr.type checking for not SUCCESS
 							OBChestShop.getEconomy().withdrawPlayer(player, debitamt);
-							shopitem.moveStockToInventory(player.getUniqueId().toString(), numitems);
-							shopitem.removeStock(numitems);
+							stockitem.moveStockToInventory(player.getUniqueId().toString(), numitems);
 							Player shopowner = (Player) Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
 							OBChestShop.getEconomy().depositPlayer(shopowner, debitamt);
-							player.sendMessage(
-									OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully purchased item. "
-											+ ChatColor.GRAY + "$" + debitamt + ChatColor.GREEN + " removed from balance");
-							// TODO: add titlemanager overlay message
-
+							player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully purchased item. "
+								+ ChatColor.GRAY + "$" + debitamt + ChatColor.GREEN + " removed from balance");
 							ItemSell itemsell = new ItemSell(player, shopname, shopitem);
 							itemsell.draw();
 						}
@@ -174,20 +243,232 @@ public class MenuAction implements Listener {
 						player.closeInventory();
 					}
 
+					//
+					// BUY ITEM MENU
+					//
+					} else if (shopview.startsWith("[BUY ")) {
+
+						event.setCancelled(true);
+
+						if (OBChestShop.getShopList().shopExists(shopname)) {
+
+							// extract our hidden info - item slot
+							int itemslot = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[1]);
+							ShopItem shopitem = shop.getShopItem(ShopItemTypes.Buy, itemslot);
+							ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+
+							// MENU BACK
+							if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
+								// TODO: add to all menu back, or consider adding to after event cancel on each menu type?
+								if (OBChestShop.menunav.size() >0) {
+									OBChestShop.menunav.pop();
+									Buying buymenu = new Buying(shopname, player);
+									buymenu.draw();
+								} else {
+									player.closeInventory();
+								}
+							}  else if (event.getRawSlot() > 26 && event.getRawSlot() < 34
+									&& (itemclicked.getType().name().startsWith("CYAN") || itemclicked.getType().name().startsWith("LIGHT_BLUE"))) {
+								// BUY ITEM
+								Double creditamt = 0.0;
+								int numitems = 0;
+								if (event.getRawSlot() == 27 && itemclicked.getType().name().equals("LIGHT_BLUE_CONCRETE_POWDER") && clicktype == ClickType.LEFT) {
+									// process purchase of one item
+									creditamt = shopitem.getPrice();
+									numitems = 1;
+								}
+								if (event.getRawSlot() == 28 && itemclicked.getType().name().equals("LIGHT_BLUE_CONCRETE") && clicktype == ClickType.LEFT) {
+									// process purchase of eight items
+									creditamt = shopitem.getPrice() * 8;
+									numitems = 8;
+								}
+								if (event.getRawSlot() == 29 && itemclicked.getType().name().equals("CYAN_WOOL") && clicktype == ClickType.LEFT) {
+									// process purchase of quarter stack (16 items)
+									creditamt = shopitem.getPrice() * 16;
+									numitems = 16;
+								}
+								if (event.getRawSlot() == 30 && itemclicked.getType().name().equals("CYAN_CONCRETE") && clicktype == ClickType.LEFT) {
+									// process purchase of half stack (32 items)
+									creditamt = shopitem.getPrice() * 32;
+									numitems = 32;
+								}
+								if (event.getRawSlot() == 31 && itemclicked.getType().name().equals("CYAN_TERRACOTTA") && clicktype == ClickType.LEFT) {
+									// process purchase of one stack (64 items)
+									creditamt = shopitem.getPrice() * 64;
+									numitems = 64;
+								}
+								if (event.getRawSlot() == 33 && itemclicked.getType().name().equals("LIGHT_BLUE_TERRACOTTA") && clicktype == ClickType.LEFT) {
+									// process purchase of all or as many items as we can from player - quantity is encoded in item meta
+									numitems = Integer.parseInt(itemclicked.getItemMeta().getLocalizedName());
+									creditamt = BigDecimal.valueOf(shopitem.getPrice() * numitems).setScale(2, RoundingMode.HALF_UP).doubleValue();
+								}
+								// credit player, take items from player and place into stock if we are selling this item
+								// or place into storage and finally debit shop owner
+								// TODO: add EconomyResponse ecr.type checking for not SUCCESS
+								OBChestShop.getEconomy().depositPlayer(player, creditamt);
+								// fill up sell item stock to limit first, then into stock item
+								stockitem.moveInventoryToStock(player.getUniqueId().toString(), numitems);
+								Player shopowner = (Player) Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
+								OBChestShop.getEconomy().withdrawPlayer(shopowner, creditamt);
+								player.sendMessage(
+										OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully sold item" + (numitems != 1 ? "s. " : ". ")
+												+ ChatColor.GRAY + "$" + creditamt + ChatColor.GREEN + " added to balance");
+								// TODO: add titlemanager overlay message
+
+								ItemBuy itembuy = new ItemBuy(player, shopname, shopitem);
+								itembuy.draw();
+							}
+							
+							
+						}
 				//
-				// SETTINGS MENU
+				// SHOP STOREROOM MENU
+				//
+				} else if (shopview.startsWith("[STOCK] ")) {
+					
+					event.setCancelled(true);
+
+					// extract our hidden info - page number
+					Integer page = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName());
+
+					// MENU BACK
+					if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
+						switch (OBChestShop.menunav.pop()) {
+							case Sell:
+								Selling sellmenu = new Selling(shopname, player);
+								sellmenu.draw();
+								break;
+							case Buy:
+								Buying buymenu = new Buying(shopname, player);
+								buymenu.draw();
+								break;
+						}
+					}
+
+					// SELL MENU
+					if (event.getRawSlot() == 2 && itemclicked.getType().name().equals("LANTERN") && clicktype == ClickType.LEFT) {
+						OBChestShop.menunav.clear();
+						Selling sellmenu = new Selling(shopname, player);
+						sellmenu.draw();
+					}
+					// BUY MENU
+					if (event.getRawSlot() == 3 && itemclicked.getType().name().equals("SOUL_LANTERN") && clicktype == ClickType.LEFT) {
+						OBChestShop.menunav.clear();
+						OBChestShop.menunav.push(MenuTypes.Sell);
+						Buying buymenu = new Buying(shopname, player);
+						buymenu.draw();
+					}
+					
+					// go to settings menu
+					if (event.getRawSlot() == 8 && itemclicked.getType().name().equals("ENDER_CHEST") && clicktype == ClickType.LEFT ) {
+						if (OBChestShop.getShopList().shopExists(shopname)) {
+							if (player.getUniqueId().toString().equals(OBChestShop.getShopList().getShop(shopname).getOwner())) {
+								OBChestShop.menunav.push(MenuTypes.Stock);
+								Settings settingsmenu = new Settings(ShopItemTypes.Stock, player, shopname, page);
+								settingsmenu.draw();
+							}
+						} else {
+							player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Oops. The shop appears to have been removed");
+							log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Shop " + shopname + " appears to have been removed");
+							player.closeInventory();
+						}
+					}
+					
+					// navigate to other stock pages
+					if (event.getRawSlot() == 9 && itemclicked.getType().name().equals("GHAST_TEAR") && clicktype == ClickType.LEFT) {
+						page = page.intValue() - 1;
+						StockRoom prevmenu = new StockRoom(shopname, player, page);
+						prevmenu.draw();
+					}
+					if (event.getRawSlot() == 17 && itemclicked.getType().name().equals("GOLD_NUGGET") && clicktype == ClickType.LEFT) {
+						page = page.intValue() + 1;
+						StockRoom nextmenu = new StockRoom(shopname, player, page);
+						nextmenu.draw();
+					}
+					
+					// process item clicked in stock 
+					if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
+						int configslot = event.getRawSlot() + ((page-1) * 36);
+						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Stock, configslot);
+						OBChestShop.menunav.push(MenuTypes.Stock);
+						ItemConfig itemconfig = new ItemConfig(ShopItemTypes.Stock, player, shopname, shopitem, page);
+						itemconfig.draw();
+					}
+					
+					// ADD STOCK TO ITEM
+					if (event.getRawSlot() > 53 && event.getRawSlot() < 90) {
+						int stockaddamount = 1;
+						boolean limitreached = false;
+
+						if (shop.itemListContains(ShopItemTypes.Stock, itemclicked.getType().name())) {
+							// get amount to add - default is one, or entire stack clicked, or entire inventory of the type
+							if (clicktype == ClickType.SHIFT_LEFT) {
+								stockaddamount = itemclicked.getAmount();
+							} else if (clicktype == ClickType.RIGHT) {
+								stockaddamount = getPlayerInventoryCount(player, itemclicked.getType().name());
+							}
+
+							ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, itemclicked.getType().name());
+
+							// check for stock limit breach and adjust down as necessary if there's space for more items
+							if (stockitem.getStockQuantity() < shop.getStockLimit()) {
+								if ((stockitem.getStockQuantity() + stockaddamount) > shop.getStockLimit()) {
+									stockaddamount = shop.getStockLimit();
+									limitreached = true;
+								}
+								
+								// move inventory into stock
+								if (clicktype == ClickType.RIGHT) {
+									stockitem.moveInventoryToStock(player.getUniqueId().toString(), stockaddamount);
+								} else {
+									stockitem.addStock(stockaddamount);
+									itemclicked.setAmount(itemclicked.getAmount() - stockaddamount);
+								}
+								shop.saveShop();
+
+								// inform user operation completed
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Added " + ChatColor.GRAY + itemclicked.getType().name().toLowerCase() + ChatColor.GREEN + " to stock");
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " items placed into stock");
+								if (limitreached) {
+									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item. ");
+								}
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 400, 400);								
+									
+								StockRoom stockroom = new StockRoom(shopname, player, 1);
+								stockroom.draw();
+								
+							} else {
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item.");
+							}
+						}
+					}
+				
+				//
+				// SHOP SETTINGS MENU
 				//
 				} else if (shopview.startsWith("[SETTINGS] ")) {
 
 					event.setCancelled(true);
 
 					// extract our hidden info - type
-					ShopItemTypes type = ShopItemTypes.valueOf(event.getView().getItem(0).getItemMeta().getLocalizedName()); 
-					
+					ShopItemTypes type = ShopItemTypes.valueOf(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[0]);
+					Integer page = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[1]);
 					// MENU BACK
 					if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
-						Selling buymenu = new Selling(shopname, player);
-						buymenu.draw();
+						switch (OBChestShop.menunav.pop()) {
+							case Sell:
+								Selling sellmenu = new Selling(shopname, player);
+								sellmenu.draw();
+								break;
+							case Buy:
+								Buying buymenu = new Buying(shopname, player);
+								buymenu.draw();
+								break;
+							case Stock:
+								StockRoom stockmenu = new StockRoom(shopname, player, page);
+								stockmenu.draw();
+								break;
+						}
 					}
 					// CHANGE SHOP NAME
 					if (event.getRawSlot() == 2 && itemclicked.getType().name().equals("NAME_TAG") && clicktype == ClickType.LEFT) {
@@ -272,83 +553,195 @@ public class MenuAction implements Listener {
 					// TOGGLE SHOP OPEN/CLOSED
 					if (event.getRawSlot() == 8 &&  Tag.WOOL.isTagged(itemclicked.getType()) && clicktype == ClickType.LEFT) {
 						OBChestShop.getShopList().getShop(shopname).toggleOpen();
+						OBChestShop.menunav.clear();
 						player.closeInventory();
 					}
 
+					// navigate to other stock pages
+					if (event.getRawSlot() == 9 && itemclicked.getType().name().equals("GHAST_TEAR") && clicktype == ClickType.LEFT) {
+						page = page.intValue() - 1;
+						Settings prevmenu = new Settings(type, player, shopname, page);
+						prevmenu.draw();
+					}
+					if (event.getRawSlot() == 17 && itemclicked.getType().name().equals("GOLD_NUGGET") && clicktype == ClickType.LEFT) {
+						page = page.intValue() + 1;
+						Settings nextmenu = new Settings(type, player, shopname, page);
+						nextmenu.draw();
+					}
+					
 					// CONFIGURE SHOP ITEM
 					if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
-						ItemConfig itemconfig = new ItemConfig(type, player, shopname, shop.getShopItem(type, event.getRawSlot()));
+						switch (type) {
+						case Sell:
+							OBChestShop.menunav.push(MenuTypes.SellSettings);
+							break;
+						case Buy:
+							OBChestShop.menunav.push(MenuTypes.BuySettings);
+							break;
+						case Stock:
+							OBChestShop.menunav.push(MenuTypes.StockSettings);
+							break;
+						}
+						int configslot = event.getRawSlot() + ((page-1) * 36);
+						ItemConfig itemconfig = new ItemConfig(type, player, shopname, shop.getShopItem(type, configslot), page);
 						itemconfig.draw();
 					}
 
-					// ADD ITEM TO SHOP (from player inventory)
+					// ADD ITEM TO SHOP OR STOCK TO ITEM
 					if (event.getRawSlot() > 53 && event.getRawSlot() < 90) {
-						int stockchangeamount = 1;
-						boolean breach = false;
-						if (!shop.itemListContains(type, itemclicked.getType().name())) {
-							if (shop.hasSpace(type)) {
-								int openslot = shop.getNextOpenSlot(type);
-								if ( clicktype == ClickType.SHIFT_LEFT ) {
-									stockchangeamount = itemclicked.getAmount();
-								}
-								if (stockchangeamount > shop.getStockLimit()) {
-									stockchangeamount = shop.getStockLimit();
-									breach = true;
-								}
-								ItemStack cloneitem = itemclicked.clone();
-								cloneitem.setAmount(1);
-								shop.addShopItem(type, new ShopItem(openslot, cloneitem.getType().toString(), stockchangeamount));
-								event.getInventory().setItem(openslot, cloneitem);
-								itemclicked.setAmount(itemclicked.getAmount() - stockchangeamount);
-								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Added " + stockchangeamount + " " + ChatColor.GRAY + cloneitem.getType().name().toLowerCase() + ChatColor.GREEN + " to shop");
-								if (breach) {
-									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item. ");
-								}
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 400, 400);
-							} else {
-								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "No space left in this shop");
-								player.closeInventory();
-							}
-						} else {
-							if (clicktype == ClickType.LEFT || clicktype == ClickType.SHIFT_LEFT) {
-								ShopItem shopitem = shop.getShopItem(type, shop.getItemSlotByName(type, itemclicked.getType().name()));
-								// add one or more of an item into stock for the shop item
-								if (clicktype == ClickType.SHIFT_LEFT) {
-									stockchangeamount = itemclicked.getAmount();
-								}
 
-								if (shopitem.getStockQuantity() < shop.getStockLimit()) {
-									if ((shopitem.getStockQuantity() + stockchangeamount) > shop.getStockLimit()) {
-										stockchangeamount = shop.getStockLimit() - shopitem.getStockQuantity();
-										breach = true;
+						int stockaddamount = 1;
+						boolean limitreached = false;
+
+						boolean stockadd = false;
+						if (type.equals(ShopItemTypes.Stock)) {
+							if (shop.itemListContains(ShopItemTypes.Sell, itemclicked.getType().name()) ||
+								shop.itemListContains(ShopItemTypes.Buy, itemclicked.getType().name())) {
+								stockadd = true;
+							}
+						}
+						// add item to buy or sell lists, or add stock to existing item
+						if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Buy) || stockadd) {
+							if (!shop.itemListContains(type, itemclicked.getType().name())) {
+								if (shop.hasSpace(type)) {
+
+									// get amount to add - one, entire stack clicked, or entire inventory of the type
+									if (clicktype == ClickType.SHIFT_LEFT && type.equals(ShopItemTypes.Sell)) {
+										stockaddamount = itemclicked.getAmount();
+									} else if (clicktype == ClickType.RIGHT && type.equals(ShopItemTypes.Sell)) {
+										stockaddamount = getPlayerInventoryCount(player, itemclicked.getType().name());
 									}
-									shop.addItemStock(type, shopitem.getSlot(), stockchangeamount);
-									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + stockchangeamount + " " + ChatColor.GRAY + itemclicked.getType().name().toLowerCase() + ChatColor.GREEN + " added to stock");
-									if (breach) {
+
+									// check for stock limit breach and adjust down as necessary
+									if (stockaddamount > shop.getStockLimit()) {
+										stockaddamount = shop.getStockLimit();
+										limitreached = true;
+									}
+									
+									// create a stock item if not already one there - we don't need to check for space
+									// because if there's buy or sell space, then there's got to be stock space
+									ShopItem stockitem = null;
+									if (!shop.itemListContains(ShopItemTypes.Stock, itemclicked.getType().name())) {
+										shop.addShopItem(ShopItemTypes.Stock, new ShopItem(shop.getNextOpenSlot(ShopItemTypes.Stock), itemclicked.getType().name(), 0));
+									}
+									stockitem = shop.getShopItem(ShopItemTypes.Stock, itemclicked.getType().name());
+
+									// create an item in the inventory based off what was clicked
+									ItemStack cloneitem = itemclicked.clone();
+									cloneitem.setAmount(1);
+									int openslot = shop.getNextOpenSlot(type);
+									event.getInventory().setItem(openslot, cloneitem);
+
+									// add item to appropriate sell or buy list
+									shop.addShopItem(type, new ShopItem(openslot, itemclicked.getType().name(), 0));
+									
+									// move inventory for sell - don't need to move anything for buy item add
+									if (type.equals(ShopItemTypes.Sell)) {
+										if (clicktype == ClickType.RIGHT) {
+											stockitem.moveInventoryToStock(player.getUniqueId().toString(), stockaddamount);
+										} else {
+											stockitem.addStock(stockaddamount);
+											itemclicked.setAmount(itemclicked.getAmount() - stockaddamount);
+										}
+									}
+									shop.saveShop();
+									
+									// inform user operation completed
+									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Added " + ChatColor.GRAY + cloneitem.getType().name().toLowerCase() + ChatColor.GREEN + " to shop " + (type.equals(ShopItemTypes.Sell) ? "sell" : "buy")+ " list");
+									if (type.equals(ShopItemTypes.Sell)) {
+										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " items placed into stock");
+										if (limitreached) {
+											player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item. ");
+										}
+									}
+									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 400, 400);								
+
+									Settings settingsmenu = new Settings(type, player, shopname, page);
+									settingsmenu.draw();
+
+								} else {
+									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Unable to add item to shop's " + (type.equals(ShopItemTypes.Sell) ? "sell" : "buy") + " list as there's no space");								
+								}
+							} else {
+								// add stock to existing item - sell and stock
+								// get amount to add - one, entire stack clicked, or entire inventory of the type
+								if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Stock)) {
+								
+									// get quantity to add based on click type
+									if (clicktype == ClickType.SHIFT_LEFT) {
+										stockaddamount = itemclicked.getAmount();
+									} else if (clicktype == ClickType.RIGHT) {
+										stockaddamount = getPlayerInventoryCount(player, itemclicked.getType().name());
+									}
+
+									ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, itemclicked.getType().name());
+
+									if (stockitem.getStockQuantity() < shop.getStockLimit()) {
+
+										// check for stock limit breach and adjust quantity down as necessary
+										if ((stockitem.getStockQuantity() + stockaddamount) > shop.getStockLimit()) {
+											stockaddamount = shop.getStockLimit() - stockitem.getStockQuantity();
+											limitreached = true;
+										}
+										
+										// move inventory to stock
+										if (clicktype == ClickType.RIGHT) {
+											stockitem.moveInventoryToStock(player.getUniqueId().toString(), stockaddamount);
+										} else {
+											stockitem.addStock(stockaddamount);
+											itemclicked.setAmount(itemclicked.getAmount() - stockaddamount);
+										}
+										shop.saveShop();
+										
+										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " items placed into stock");
+										if (limitreached) {
+											player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item.");
+										}
+										player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 400, 400);
+										
+										Settings settingsmenu = new Settings(type, player, shopname, page);
+										settingsmenu.draw();
+										
+									} else {
 										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item.");
 									}
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 400, 400);
-									itemclicked.setAmount(itemclicked.getAmount() - stockchangeamount);	// do last as setting to zero removes the item from the inventory
-								} else {
-									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock quantity " + ChatColor.GRAY + shopitem.getStockQuantity() + ChatColor.RED + " already at or greater than limit.");
 								}
 							}
 						}
-						Settings settingsmenu = new Settings(type, player, shopname);
-						settingsmenu.draw();
 					}
+
+				//
+				// SHOP ITEM CONFIG
+				//
 				} else if (shopview.startsWith("[ITEM ")) {
 
 					event.setCancelled(true);
-
+					
 					// extract our hidden info - type and item slot
 					ShopItemTypes type = ShopItemTypes.valueOf(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[0]);
 					int itemslot = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[1]);
+					int page = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[2]);
 					
 					// MENU BACK
 					if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
-						Settings settingsmenu = new Settings(type, player, shopname);
-						settingsmenu.draw();
+						switch (OBChestShop.menunav.pop()) {
+						case SellSettings:
+							Settings sellsettings = new Settings(ShopItemTypes.Sell, player, shopname, 1);
+							sellsettings.draw();
+							break;
+						case BuySettings:
+							Settings buysettings = new Settings(ShopItemTypes.Buy, player, shopname, 1);
+							buysettings.draw();
+							break;
+						case StockSettings:
+							Settings stocksettings = new Settings(ShopItemTypes.Stock, player, shopname, page);
+							stocksettings.draw();
+							break;
+						case Stock:
+							StockRoom stockroom = new StockRoom(shopname, player, page);
+							stockroom.draw();
+							break;
+						}
 					}
 
 					String itemname = (shopview.split(" ", 0)[1]).replace("]", "");
@@ -356,16 +749,46 @@ public class MenuAction implements Listener {
 
 					// REMOVE ITEM
 					if (event.getRawSlot() == 8 && itemclicked.getType().name().equals("BARRIER") && clicktype == ClickType.LEFT) {
-						shopitem.moveStockToInventory(player.getUniqueId().toString(), shopitem.getStockQuantity());
-						for (Player onlineplayer : Bukkit.getOnlinePlayers()) {
-							if (shop.isPlayerAccessingItem(onlineplayer, type, itemname)) {
-		   						onlineplayer.closeInventory();
-		   						onlineplayer.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Item " + itemname + " was removed from shop!");
+
+						if (type.equals(ShopItemTypes.Stock)) { 
+							shopitem.moveStockToInventory(player.getUniqueId().toString(), shopitem.getStockQuantity());
+							OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Stock, shopitem.getSlot());
+							// remove any sell items for this stock item
+							if (shop.itemListContains(ShopItemTypes.Sell, shopitem.getItemName())) {
+								ShopItem sellitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Sell, shopitem.getItemName());
+								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Sell, sellitem.getSlot());
 							}
+							// remove any buy items for this stock item
+							if (shop.itemListContains(ShopItemTypes.Buy, shopitem.getItemName())) {
+								ShopItem buyitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Buy, shopitem.getItemName());
+								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Buy, buyitem.getSlot());
+							}
+
+						} else {
+							ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+							// close out any player menus if they are accessing this item
+							for (Player onlineplayer : Bukkit.getOnlinePlayers()) {
+								if (shop.isPlayerAccessingItem(onlineplayer, type, itemname)) {
+			   						onlineplayer.closeInventory();
+			   						onlineplayer.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Item " + itemname + " was removed from shop!");
+								}
+							}
+							// determine whether to remove stock item
+							if (type.equals(ShopItemTypes.Sell) && !shop.itemListContains(ShopItemTypes.Buy, shopitem.getItemName())) {
+								stockitem.moveStockToInventory(player.getUniqueId().toString(), stockitem.getStockQuantity());
+								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Stock, stockitem.getSlot());
+							}
+							if (type.equals(ShopItemTypes.Buy) && !shop.itemListContains(ShopItemTypes.Sell, shopitem.getItemName())) {
+								stockitem.moveStockToInventory(player.getUniqueId().toString(), stockitem.getStockQuantity());
+								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Stock, stockitem.getSlot());
+							}
+							// remove actual item
+							OBChestShop.getShopList().getShop(shopname).removeitem(type, itemslot);
 						}
-						OBChestShop.getShopList().getShop(shopname).removeitem(type, itemslot);
+						shop.saveShop();
 						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Removed " + ChatColor.GRAY + itemname.toLowerCase() + ChatColor.GREEN + " from shop");
-						Settings settingsmenu = new Settings(type, player, shopname);
+						OBChestShop.menunav.pop();
+						Settings settingsmenu = new Settings(type, player, shopname, page);
 						settingsmenu.draw();
 					}
 
@@ -382,28 +805,7 @@ public class MenuAction implements Listener {
 								.onComplete((p, guireturnvalue) -> {
 									shopitem.setPrice(SanitizePrice(shopitem.getPrice(), guireturnvalue));
 									OBChestShop.getShopList().getShop(shopname).saveShop();
-									Settings settingsmenu = new Settings(type, player, shopname);
-									settingsmenu.draw(); 
-									return AnvilGUI.Response.close();
-								})
-								.plugin(OBChestShop.getInstance())
-								.open(player);
-					}
-
-					// AMOUNT CHANGE
-					if (event.getRawSlot() == 19 && itemclicked.getType().name().equals("LIGHT_GRAY_TERRACOTTA") && clicktype == ClickType.LEFT) {
-						// obtain new amount for item using an anvil gui
-						ItemStack guiitem = new ItemStack(Material.PRISMARINE_CRYSTALS, 1);
-
-						gui = new AnvilGUI.Builder()
-								.text(shopitem.getAmount().toString())
-								.title("Enter new amount:")
-								.itemLeft(guiitem)
-								.onClose(p -> {})
-								.onComplete((p, guireturnvalue) -> {
-									shopitem.setAmount(SanitizeAmount(shopitem.getAmount(), guireturnvalue));
-									OBChestShop.getShopList().getShop(shopname).saveShop();
-									Settings settingsmenu = new Settings(type, player, shopname);
+									Settings settingsmenu = new Settings(type, player, shopname, 1);
 									settingsmenu.draw(); 
 									return AnvilGUI.Response.close();
 								})
@@ -412,7 +814,7 @@ public class MenuAction implements Listener {
 					}
 
 					// ITEM DESCRIPTION CHANGE
-					if (event.getRawSlot() == 20 && itemclicked.getType().name().equals("WHITE_TERRACOTTA") && clicktype == ClickType.LEFT) {
+					if (event.getRawSlot() == 19 && itemclicked.getType().name().equals("WHITE_TERRACOTTA") && clicktype == ClickType.LEFT) {
 						// set a new description for the item
 						ItemStack guiitem = new ItemStack(Material.PAPER, 1);
 						ItemMeta itemmeta = guiitem.getItemMeta();
@@ -432,7 +834,7 @@ public class MenuAction implements Listener {
 								.onComplete((p, guireturnvalue) -> {
 									shopitem.setDescription(guireturnvalue.replace(",", ""));
 									OBChestShop.getShopList().getShop(shopname).saveShop();
-									Settings settingsmenu = new Settings(type, player, shopname);
+									Settings settingsmenu = new Settings(type, player, shopname, 1);
 									settingsmenu.draw(); 
 									return AnvilGUI.Response.close();
 								})
@@ -496,7 +898,7 @@ public class MenuAction implements Listener {
 								// TODO: add boolean return on move inventory method
 								// TODO: raises bigger issue of transaction integrity and rollback
 								shopitem.moveInventoryToStock(player.getUniqueId().toString(), stockchangeamount);
-								shopitem.addStock(stockchangeamount);
+								OBChestShop.getShopList().getShop(shopname).saveShop();
 							}
 							if (breach) {
 								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached. ");
@@ -545,7 +947,7 @@ public class MenuAction implements Listener {
 							// TODO: add boolean return on move method
 							// TODO: raises bigger issue of transaction integrity and rollback
 							shopitem.moveStockToInventory(player.getUniqueId().toString(), stockchangeamount);
-							shopitem.removeStock(stockchangeamount);
+							OBChestShop.getShopList().getShop(shopname).saveShop();
 
 							// update visual inventory (in the item display name)
 							ItemMeta itemmeta = event.getClickedInventory().getItem(4).getItemMeta();
@@ -641,4 +1043,18 @@ public class MenuAction implements Listener {
 		return currentlimit;
 	}
 	
+	// get player inventory count of item
+	private int getPlayerInventoryCount(Player player, String itemname) {
+        int onhand = 0;
+        ItemStack checkitem = null;
+		Inventory playerinv = player.getInventory();
+		// get count of player inventory of item
+		for (int i = 0; i < 40; i++) {
+			checkitem = playerinv.getItem(i);
+			if (checkitem != null && checkitem.getType().name().equals(itemname)) {
+				onhand += checkitem.getAmount();
+			}
+		}
+		return onhand;
+	}
 }

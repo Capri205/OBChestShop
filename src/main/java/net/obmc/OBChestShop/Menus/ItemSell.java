@@ -1,5 +1,6 @@
 package net.obmc.OBChestShop.Menus;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ public class ItemSell {
 		
 		this.player = player;
     	this.shop = OBChestShop.getShopList().getShop(shopname);
+		ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
     	inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[SELL " + shopitem.getItem().getType().name() + "]" + " " + ChatColor.DARK_GREEN + shopname);
     	inv.clear();
     	
@@ -40,98 +42,101 @@ public class ItemSell {
         
         ItemStack item = new ItemStack(Material.valueOf(shopitem.getItem().getType().name()), 1);
         ItemMeta itemMeta = item.getItemMeta();
-        itemMeta.setDisplayName(ChatColor.WHITE + "" + ChatColor.BOLD + shopitem.getItem().getType().name() + ChatColor.AQUA + " (" + shopitem.getStockQuantity() + ")");
+        itemMeta.setDisplayName(ChatColor.WHITE + "" + ChatColor.BOLD + shopitem.getItem().getType().name() + ChatColor.AQUA + " (" + stockitem.getStockQuantity() + ")");
         item.setItemMeta(itemMeta);
         inv.setItem(4,  item);
         
-    	ItemStack divider = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-    	if (!shop.isOpen()) {
-    		divider = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-    	}
+    	ItemStack divider = new ItemStack(Material.ORANGE_STAINED_GLASS_PANE);
         for (int i = 9; i < 18; i++) {
         	inv.setItem(i, divider);
         }
         
-        Boolean hasOne = shopitem.getStockQuantity() >= shopitem.getAmount();
-        Boolean hasEight = shopitem.getStockQuantity() > shopitem.getAmount() * 8;
-        Boolean hasQuarterStack = shopitem.getStockQuantity() > shopitem.getAmount() * 16;
-        Boolean hasHalfStack = shopitem.getStockQuantity() > shopitem.getAmount() * 32;
-        Boolean hasStack = shopitem.getStockQuantity() > shopitem.getAmount() * 64;
+        Boolean hasOne = stockitem.getStockQuantity() >= 1;
+        Boolean hasEight = stockitem.getStockQuantity() > 8;
+        Boolean hasQuarterStack = stockitem.getStockQuantity() > 16;
+        Boolean hasHalfStack = stockitem.getStockQuantity() > 32;
+        Boolean hasStack = stockitem.getStockQuantity() > 64;
 
         // BUY ONE
-        ItemStack buy1 = new ItemStack(Material.LIME_WOOL, 1);
-        ItemMeta buy1Meta = buy1.getItemMeta();
+        ItemStack sell1 = new ItemStack(Material.LIME_WOOL, 1);
+        ItemMeta sell1Meta = sell1.getItemMeta();
         if (OBChestShop.getEconomy().getBalance(Bukkit.getOfflinePlayer(player.getUniqueId())) < shopitem.getPrice()) {
-        	buy1 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy1Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
+        	sell1 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell1Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
         } else if (hasOne) {
-        	buy1Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " one" + ChatColor.GRAY + " item");
+        	sell1Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " one " + ChatColor.GRAY + "item");
+        	sell1Meta.setLore(Arrays.asList(ChatColor.WHITE + "You pay $" + shopitem.getPriceFormatted()));
         } else {
-        	buy1 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy1Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for one item");
+        	sell1 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell1Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for one item");
         }
-        buy1.setItemMeta(buy1Meta);
-        inv.setItem(27, buy1);
+        sell1.setItemMeta(sell1Meta);
+        inv.setItem(27, sell1);
         
         // BUY 8
-        ItemStack buy8 = new ItemStack(Material.LIME_CONCRETE, 1);
-        ItemMeta buy8Meta = buy8.getItemMeta();
+        ItemStack sell8 = new ItemStack(Material.LIME_CONCRETE, 1);
+        ItemMeta sell8Meta = sell8.getItemMeta();
         if (OBChestShop.getEconomy().getBalance(Bukkit.getOfflinePlayer(player.getUniqueId())) < (shopitem.getPrice()*8.0)) {
-        	buy8 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy8Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
+        	sell8 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell8Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
         } else if (hasEight) {
-        	buy8Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " eight" + ChatColor.GRAY + " items");        	
+        	sell8Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " eight " + ChatColor.GRAY + "items");
+        	sell8Meta.setLore(Arrays.asList(ChatColor.WHITE + "You pay $" + shopitem.getPriceFormatted(8)));
         } else {
-        	buy8 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy8Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for eight items");
+        	sell8 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell8Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for eight items");
         }
-        buy8.setItemMeta(buy8Meta);
-        inv.setItem(28, buy8);
+        sell8.setItemMeta(sell8Meta);
+        inv.setItem(28, sell8);
 
         // BUY 16
-        ItemStack buy16 = new ItemStack(Material.LIME_TERRACOTTA, 1);
-        ItemMeta buy16Meta = buy16.getItemMeta();
+        ItemStack sell16 = new ItemStack(Material.LIME_TERRACOTTA, 1);
+        ItemMeta sell16Meta = sell16.getItemMeta();
         if (OBChestShop.getEconomy().getBalance(Bukkit.getOfflinePlayer(player.getUniqueId())) < (shopitem.getPrice()*16.0)) {
-        	buy16 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy16Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
+        	sell16 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell16Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
         } else if (hasQuarterStack) {
-        	buy16Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " sixteen" + ChatColor.GRAY + " items");        	
+        	sell16Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " quarter stack " + ChatColor.GRAY + "(16 items)");
+        	sell16Meta.setLore(Arrays.asList(ChatColor.WHITE + "You pay $" + shopitem.getPriceFormatted(16)));
+
         } else {
-        	buy16 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy16Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for quarter stack");
+        	sell16 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell16Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for quarter stack");
         }
-        buy16.setItemMeta(buy16Meta);
-        inv.setItem(29, buy16);        
+        sell16.setItemMeta(sell16Meta);
+        inv.setItem(29, sell16);        
 
         // BUY 32
-        ItemStack buy32 = new ItemStack(Material.GREEN_CONCRETE_POWDER, 1);
-        ItemMeta buy32Meta = buy32.getItemMeta();
+        ItemStack sell32 = new ItemStack(Material.GREEN_CONCRETE_POWDER, 1);
+        ItemMeta sell32Meta = sell32.getItemMeta();
         if (OBChestShop.getEconomy().getBalance(Bukkit.getOfflinePlayer(player.getUniqueId())) < (shopitem.getPrice()*32.0)) {
-        	buy32 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy32Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
+        	sell32 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell32Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
         } else if (hasHalfStack) {
-        	buy32Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " half a stack (32)" + ChatColor.GRAY + " of items");        	
+        	sell32Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " half a stack " + ChatColor.GRAY + "(32 items)");        	
+        	sell32Meta.setLore(Arrays.asList(ChatColor.WHITE + "You pay $" + shopitem.getPriceFormatted(32)));
         } else {
-        	buy32 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy32Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for half a stack");
+        	sell32 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell32Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for half a stack");
         }
-        buy32.setItemMeta(buy32Meta);
-        inv.setItem(30, buy32);
+        sell32.setItemMeta(sell32Meta);
+        inv.setItem(30, sell32);
         
         // BUY 64
-        ItemStack buy64 = new ItemStack(Material.GREEN_CONCRETE, 1);
-        ItemMeta buy64Meta = buy64.getItemMeta();
+        ItemStack sell64 = new ItemStack(Material.GREEN_CONCRETE, 1);
+        ItemMeta sell64Meta = sell64.getItemMeta();
         if (OBChestShop.getEconomy().getBalance(Bukkit.getOfflinePlayer(player.getUniqueId())) < (shopitem.getPrice()*64.0)) {
-        	buy64 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy64Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
+        	sell64 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell64Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "You do not have enough money");
         } else if (hasStack) {
-        	buy64Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " a stack (64) of" + ChatColor.GRAY + " items");        	
+        	sell64Meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to buy" + ChatColor.LIGHT_PURPLE + " a stack " + ChatColor.GRAY + "(64 items)");        	
+        	sell64Meta.setLore(Arrays.asList(ChatColor.WHITE + "You pay $" + shopitem.getPriceFormatted(64)));
         } else {
-        	buy64 = new ItemStack(Material.WHITE_WOOL, 1);
-         	buy64Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for a full stack");
+        	sell64 = new ItemStack(Material.WHITE_WOOL, 1);
+         	sell64Meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Not enough items in stock for a full stack");
         }
-        buy64.setItemMeta(buy64Meta);
-        inv.setItem(31, buy64); 
+        sell64.setItemMeta(sell64Meta);
+        inv.setItem(31, sell64); 
 	}
 
 	 public void draw() {
