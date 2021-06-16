@@ -9,10 +9,13 @@ Use the /obshop or /obs command to get the command help menu.
 ## Usage
 
 Place down a Chest, Trapped Chest, Ender Chest, Shulker Box or a Barrel.
-Place any type of sign on either face of the chest or on the top and set the first line as [obshop].
-Optionally you can put the shop name on the second line, or enter the shop name in the GUI that opens up.
-In the shop name GUI enter the name in the text box at the top, then press paper on the right side to
-accept the name of the shop.
+Place any type of sign on either face of the chest or on the top in any direction. It is possible to put
+up to five shops on a single container. The container is not used for anything presently and the shop
+items are stored in the configuration file. Set the first line of the sign text as [obshop]. Put the
+shop name on the second line, or enter the shop name in the GUI that opens up when you press Done.
+In the shop name GUI enter the name in the text box at the top, then press the paper button on the right
+hand side to accept the name of the shop. Names can be up to 35 characters when entered through the GUI
+and 23 characters when entered onto the second line of the sign text.
 
 Congratulations, you are now the owner of a shop!
 
