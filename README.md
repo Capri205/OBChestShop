@@ -179,5 +179,5 @@ In so far as new features we haven't thought that far ahead. We wanted a simple 
 replace what we lost when BetterShops stopped being updated. This plugin is very much our server use-case and
 probably won't satisfy most other server and player requirements.
 
-Compiled for 1.16 using Java 11 (with java 1.8 source version), but should work with Java 8 and older versions of Minecraft (up to a point).
+Compiled for 1.17 using Java 16.
 
