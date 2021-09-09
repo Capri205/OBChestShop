@@ -35,17 +35,17 @@ will buy items from players. The 'buy' menu has a blue divider and clicking the 
 will open the buy menu.
 
 Owners will also see a chest center of the top row which lets them enter the shops store room where they
-can manage the shop shops inventory of items. The store room will have all item being sold or purchased
+can manage the shop inventory of items. The store room will have all items being sold or purchased
 by the shop.
 
 Most menus will have an ender chest top right of the GUI which lets the owner enter the settings menu for
 the particular screen they are on. For example, clicking the ender chest whilst on the stock room menu
-will let you change shop setting and manage the stock items. Similarly clicking on it whilst on the sell
+will let you change shop setting and manage the stock items. Similarly, clicking on it whilst on the sell
 or buy screens will give the shop settings options and allow you to manage the sell and buy items. There
 will always be an arrow top left regardless, which will take you back to the previous screen you were on.
 
 A shop sell and buy menus do not support pages just yet, so the maximum number of items you can sell or
-buy in the shop is 4 rows of 9 items, so 36 items. The stock screen however has page navigation in the
+buy in the shop is 4 rows of 9 items or 36 items. The stock screen however has page navigation in the
 screen divider row, which will let you move back and forth between two pages of items. This is because a
 shop can potentially sell 36 items and purchase a completely different 36 items, so it needs to have be
 able to move between the two sets of items.
@@ -67,7 +67,7 @@ Left click on the second nametag to enter a new description for the shop. Limite
 ### Change shop limit
 Left click on the compass to set a shop-wide stock limit. This is a stock limit for any item in the shop and you
 will not be able to add stock to the shop beyond that. There is a default setting of 200 and a default absolute maximum
-value of 5000, meaning no shop limit can go beyond that. These can be changed in the configuration file, but cannot be
+value of 5000, meaning no shop item can go beyond that. These can be changed in the configuration file, but cannot be
 changed in-game yet. It's on the to-do list.
 ### Open and close the shop
 If the wool top right on the settings screen is red then the shop is closed. Left click to open the shop to the public.
@@ -80,10 +80,9 @@ will add all the items in your inventory of that type into stock. This method is
 stock of an item in the shop. Hover the mouse over the shop item to see the stock quantity as well as the price.
 ### Add items to buy
 Navigate: click the ender chest while on the buy (blue) menu.
-Similar to adding items for sale, enter the settings
-menu from the buy menu and click an item in your inventory. However, no items are actually moved from your inventory
-into stock for the buy side. It's symbolic and players actually selling items will increase the stock of that item
-in the shop.
+Similar to adding items for sale, enter the settings menu from the buy menu and click an item in your inventory.
+However, no items are actually moved from your inventory into stock for the buy side. It's symbolic and players
+actually selling items will increase the stock of that item in the shop.
 ### Add items to stock directly
 Navigate: click the chest to enter the stock screen or click the ender chest to enter settings for the stock menu.
 From either the stock menu or settings menu for the stock screen you can top up the stock of an item that is for
@@ -93,7 +92,7 @@ click will add all items in your inventory of that type - up to the limit the sh
 
 ## Configure a shop item, other ways to add/remove stock, and remove an item from the shop
 In all settings menus you can lef click a shop item to configure it. This item configuration screen will let you
-modify the price of the item (sell and buy), as well as the description for the item (sell only).
+modify the price of the item (sell and buy), as well as the description for the item if it's an item for sale.
 The shop item configuration screen for sell and stock menus will also allow you to conveniently add or remove stock,
 or completely remove the item from the shop. The item configuration menu for items the shop buys doesn't require this.
 
@@ -115,7 +114,7 @@ selling screen. They cannot access the configuration screen, but the ender chest
 over it will tell them who owns the shop.
 
 ## Purchasing and selling items
-To purchase simply click on the item in the shop and this will drop you into the item sell or buy screen where the
+Simply click on the item in the shop and this will drop you into the item sell or buy screen where the buy or sell
 options are presented. The options will be the 5 blocks from left to right in the center of the shop screen for items
 you are buying from the shop. There are 6 options for selling to the shop. If the block is green (sell) or blue (buy)
 then the option is available, but if white then there is some reason why you can't purchase or sell that option - eg.
@@ -137,20 +136,20 @@ Obviously, if your inventory space is limited then some items will drop to the f
 ## Removing a shop
 Breaking a shop sign will result in the shop being removed and the shop stock being placed into the players inventory.
 Any excess stock is dropped on the ground. Breaking the last sign on the chest also removes the chest, with any
-chest contents going onto the ground (note: chests contents aren't used by the shop or shop stock presently).
+chest contents going onto the ground (note: chest contents aren't used by the shop or shop stock presently).
 Breaking a shop chest will remove ALL signs on the chest and therefore all shops associated with those signs.
 A chest can have up to 5 signs/shops on it, but they can only be by the same owner. Alternatively there is a command
 to remove a shop by name. See the Commands section for more details.
 
 ## Commands
 /obs or /obshop will bring up the available commands:<br>
-/obs remove <shopname | all> - removes the named shop or all of your shops - obviously must be owned by the remover.<br>
+/obs remove <shopname | all> - removes the named shop or all of your shops - obviously must be owned by the remover<br>
 /obs list [all] - lists your shops or all shops with the world they exist in<br>
 /obs status [all] - lists your shops or all shops along with their state (see notes on state later)<br>
 /obs location [all] - lists your shops or all shop along with their world and [X,Y,Z] location<br>
-/obs fix <shopname> - attempts to validate and fix a shop (see notes on shop persistence later)<br>
-/obs autofix [enable|disable] - toggles on/off the periodic scanning and automatic fixing of shops with errors (see
-notes on shop persistence later)
+/obs fix <shopname> - attempts to validate and fix a shop (see shop fixing in the technical details section)<br>
+/obs autofix [enable|disable] - toggles on/off the scanning and automatic fixing of shops with errors (see shop fixing
+  in the technical details)
 
 ## Technical details
 ### Plugin config file
@@ -159,13 +158,13 @@ like a default price for a new shop item, shop limit values and a shop check int
 only be done when the server is offline.
 ### Shop config file
 The plugin will store shop data in yaml files in the plugin/OBChestShop/Shops/<owner uuid> folder. Shops are stored
-by shop name. Shop files are updated according to transaction and changes, so editing these whilst the server is
-running will result in the changes being overwritten. Shops are also saved on shutdown.
+by shop name. Shop files are updated according to player transactions and setting changes, so editing these whilst
+the server is running will result in the changes being overwritten. Shops are also saved on servershutdown.
 ### Shop state.
 The plugin maintains a running state for each shop. Initially when the plugin is loading each shop there is a
-NoShop state, and as each step in validating and loading the shop is performed the state changes until the shop
-is at ShopOK state. There are about 19 states covering config file status, world status to sign and chest block
-validation. This state is used by the shop checking and fix processes.
+'NoShop' state and as each step in validating and loading the shop is performed the state changes until the shop
+is at 'ShopOK' state. There are about 19 states a shop can be in, covering everything from config file status, world
+ status and sign and chest block validation. This state is used by the shop checking and fix processes.
 ### Shop fixing or repair
 The plugin will periodically run through a health check of a shop and will check the shop state to ensure things
 are working fine. The checks include things like validating the world the shop is in still exists, or that the
@@ -179,8 +178,8 @@ correct any issues at that time.
 ## TODO list
 The code has a lot of todo's already documented, so next steps are to address those.
 In so far as new features we haven't thought that far ahead. We wanted a simple shop that sells items to
-replace what we lost when BetterShops stopped being updated. This plugin is very much our server use-case and
-probably won't satisfy most other server and player requirements.
+replace what we lost when BetterShops stopped being updated. This plugin suited our Wild Wild West server use-case
+and probably won't satisfy most other server and player requirements.
 
 Compiled for 1.17 using Java 16.
 
