@@ -78,7 +78,7 @@ public class ItemBuy {
         Boolean playerhasStack = onhand >= 64;
         
         // buy all or as much as possible from player based on stock limits and available owner balance
-        ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+        ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, shopitem.getItemHash());
         int canbuy = shop.getStockLimit() - stockitem.getStockQuantity();
         Boolean canbuyAll = false;
         if (canbuy < onhand) {

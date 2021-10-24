@@ -31,7 +31,7 @@ public class ItemConfig {
     	inv.clear();
     	
     	Shop shop = OBChestShop.getShopList().getShop(shopname);
-        ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+        ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, shopitem.getItemHash());
 
     	ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();

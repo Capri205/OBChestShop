@@ -88,7 +88,7 @@ public class Selling {
         int slot;
         while (isit.hasNext()) {
         	slot = isit.next();
-        	shopitem = shop.getShopItem(ShopItemTypes.Sell, slot);
+        	shopitem = shop.getShopItemBySlot(ShopItemTypes.Sell, slot);
         	item = shopitem.getItem();
         	itemmeta = item.getItemMeta();
         	itemmeta.setLore(Arrays.asList(shopitem.getLore(shopname, ShopItemTypes.Sell).split(",")));
@@ -100,5 +100,4 @@ public class Selling {
     public void draw() {
     	player.openInventory(inv);
     }
-
 }

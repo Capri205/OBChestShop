@@ -42,12 +42,11 @@ public class ShopOpen implements Listener {
             		event.getPlayer().sendMessage(errmsg);
             	} else {
             		if (shop.isOpen() || shop.getOwner().equals(player.getUniqueId().toString())) {
-            			Selling buymenu = new Selling(shop.getName(), player);
-                			buymenu.draw();
+            			Selling shopsellmenu = new Selling(shop.getName(), player);
+            			shopsellmenu.draw();
             		}
             	}
             }
     	}
-    	
     }
 }

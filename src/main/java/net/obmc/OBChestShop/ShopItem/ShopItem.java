@@ -3,6 +3,7 @@ package net.obmc.OBChestShop.ShopItem;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,8 +15,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import net.md_5.bungee.api.ChatColor;
 import net.obmc.OBChestShop.OBChestShop;
-import net.obmc.OBChestShop.Menus.MenuTypes;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
+import net.obmc.OBChestShop.Utils.Utils;
 
 public class ShopItem {
 
@@ -23,14 +24,16 @@ public class ShopItem {
 
 	private int slot;
     private ItemStack item;
+    private int itemhash;
     private double price = 0.00;
     private int stock = 0;
     private String description = "";
     private DecimalFormat priceformatted = new DecimalFormat("#0.00#");
     
-    public ShopItem(int slot, String itemname, int stocktoadd) {
+    public ShopItem(int slot, ItemStack item, int stocktoadd) {
     	this.slot = slot;
-    	this.item = new ItemStack(Material.valueOf(itemname), 1);
+    	this.item = item;
+    	this.itemhash = Utils.GenerateItemHash(item);
     	this.price = 5.00;
     	this.stock = stocktoadd;
     	this.description = "";
@@ -51,6 +54,9 @@ public class ShopItem {
     }
     public String getItemName() {
     	return item.getType().name();
+    }
+    public int getItemHash() {
+    	return itemhash;
     }
     
 	public Double getPrice() {
@@ -80,7 +86,7 @@ public class ShopItem {
 	public void setStock(int quantity) {
 		this.stock = quantity;
 	}
-	
+
 	public String getLore(String shopname, ShopItemTypes type) {
 		String lore = "";
 		if (!description.isEmpty() && type.equals(ShopItemTypes.Sell)) {
@@ -91,7 +97,7 @@ public class ShopItem {
 		}
 		if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Stock)) {
 			if (type.equals(ShopItemTypes.Sell)) {
-				lore += ChatColor.YELLOW + "Stock: " + OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Stock, this.getItemName()).getStockQuantity() + ",";
+				lore += ChatColor.YELLOW + "Stock: " + OBChestShop.getShopList().getShop(shopname).getShopItemByHash(ShopItemTypes.Stock, this.itemhash).getStockQuantity() + ",";
 			} else {
 				lore += ChatColor.YELLOW + "Stock: " + stock + ",";
 			}
@@ -113,7 +119,7 @@ public class ShopItem {
 			lore += ChatColor.YELLOW + "Price: " + priceformatted.format(price) + ",";
 		}
 		if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Stock)) {
-			lore += ChatColor.YELLOW + "Stock: " + OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Stock, this.getItemName()).getStockQuantity() + ",";
+			lore += ChatColor.YELLOW + "Stock: " + OBChestShop.getShopList().getShop(shopname).getShopItemByHash(ShopItemTypes.Stock, this.itemhash).getStockQuantity() + ",";
 		}
 		lore += ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click" + ChatColor.GRAY + " to configure item" + ",";
 		return lore;
@@ -140,8 +146,7 @@ public class ShopItem {
 		int invaddqty = 0;
 		while (quantitytomove > 0) {
 			// set stack quantity
-			ItemStack moveitem = new ItemStack(Material.valueOf(item.getType().name()));
-			moveitem.setAmount(0);
+			ItemStack moveitem = item.clone();
 			if (partial > 0) {
 				moveitem.setAmount(partial);
 				partial = 0;
@@ -188,7 +193,7 @@ public class ShopItem {
 		int slot = 0;
 		int stockaddedtotal = 0;
 		while (quantitytomove > 0 && slot < 40) {
-			if (inv.getItem(slot) != null && inv.getItem(slot).getType().name().equals(item.getType().name())) {
+			if (inv.getItem(slot) != null && itemhash == Utils.GenerateItemHash(inv.getItem(slot))) {
 				int itemqty = inv.getItem(slot).getAmount();
 				if (quantitytomove >= itemqty) {
 					stockaddedtotal += itemqty;

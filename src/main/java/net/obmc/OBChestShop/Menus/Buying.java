@@ -87,7 +87,7 @@ public class Buying {
         int slot;
         while (isit.hasNext()) {
         	slot = isit.next();
-        	shopitem = shop.getShopItem(ShopItemTypes.Buy, slot);
+        	shopitem = shop.getShopItemBySlot(ShopItemTypes.Buy, slot);
         	item = shopitem.getItem();
         	itemmeta = item.getItemMeta();
         	itemmeta.setLore(Arrays.asList(shopitem.getLore(shopname, ShopItemTypes.Buy).split(",")));

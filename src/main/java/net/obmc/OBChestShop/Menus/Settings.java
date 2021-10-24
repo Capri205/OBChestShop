@@ -135,7 +135,7 @@ public class Settings {
         while (isit.hasNext()) {
         	slot = isit.next();
         	if (slot >= startslot && slot <= endslot) {
-        		shopitem = shop.getShopItem(type, slot);
+        		shopitem = shop.getShopItemBySlot(type, slot);
         		item = shopitem.getItem();
             	itemmeta = item.getItemMeta();
             	itemmeta.setLore(Arrays.asList(shopitem.getLoreSettings(shopname, type).split(",")));

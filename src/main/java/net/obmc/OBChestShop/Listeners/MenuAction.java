@@ -7,7 +7,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -20,6 +19,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Menus.Selling;
@@ -33,7 +33,7 @@ import net.obmc.OBChestShop.Menus.StockRoom;
 import net.obmc.OBChestShop.Shop.Shop;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
-
+import net.obmc.OBChestShop.Utils.Utils;
 import net.wesjd.anvilgui.AnvilGUI;
 
 public class MenuAction implements Listener {
@@ -118,7 +118,7 @@ public class MenuAction implements Listener {
 						}
 					} else if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
 						// lines 3 ~ 6 buy item
-						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Sell, event.getRawSlot());
+						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItemBySlot(ShopItemTypes.Sell, event.getRawSlot());
 						OBChestShop.menunav.push(MenuTypes.Sell);
 						ItemSell itemsell = new ItemSell(player, shopname, shopitem);
 						itemsell.draw();
@@ -171,7 +171,7 @@ public class MenuAction implements Listener {
 					} else if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
 						// lines 3 ~ 6 buy item
 						OBChestShop.menunav.push(MenuTypes.Buy);
-						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Buy, event.getRawSlot());
+						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItemBySlot(ShopItemTypes.Buy, event.getRawSlot());
 						ItemBuy itembuy = new ItemBuy(player, shopname, shopitem);
 						itembuy.draw();
 					}
@@ -187,8 +187,8 @@ public class MenuAction implements Listener {
 
 						// extract our hidden info - item slot
 						int itemslot = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[1]);
-						ShopItem shopitem = shop.getShopItem(ShopItemTypes.Sell, itemslot);
-						ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItem().getType().name());
+						ShopItem shopitem = shop.getShopItemBySlot(ShopItemTypes.Sell, itemslot);
+						ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, shopitem.getItemHash());
 
 						// MENU BACK
 						if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
@@ -254,8 +254,8 @@ public class MenuAction implements Listener {
 
 							// extract our hidden info - item slot
 							int itemslot = Integer.parseInt(event.getView().getItem(0).getItemMeta().getLocalizedName().split("#")[1]);
-							ShopItem shopitem = shop.getShopItem(ShopItemTypes.Buy, itemslot);
-							ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+							ShopItem shopitem = shop.getShopItemBySlot(ShopItemTypes.Buy, itemslot);
+							ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, shopitem.getItemHash());
 
 							// MENU BACK
 							if (event.getRawSlot() == 0 && itemclicked.getType().name().equals("ARROW") && clicktype == ClickType.LEFT) {
@@ -389,26 +389,28 @@ public class MenuAction implements Listener {
 					// process item clicked in stock 
 					if (event.getRawSlot() > 17 && event.getRawSlot() < 54) {
 						int configslot = event.getRawSlot() + ((page-1) * 36);
-						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Stock, configslot);
+						ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItemBySlot(ShopItemTypes.Stock, configslot);
 						OBChestShop.menunav.push(MenuTypes.Stock);
 						ItemConfig itemconfig = new ItemConfig(ShopItemTypes.Stock, player, shopname, shopitem, page);
 						itemconfig.draw();
 					}
 					
-					// ADD STOCK TO ITEM
+					// MOVE ITEM TO STOCK
 					if (event.getRawSlot() > 53 && event.getRawSlot() < 90) {
 						int stockaddamount = 1;
 						boolean limitreached = false;
 
-						if (shop.itemListContains(ShopItemTypes.Stock, itemclicked.getType().name())) {
+						int itemclickedhash = Utils.GenerateItemHash(itemclicked);
+						
+						if (shop.itemListContains(ShopItemTypes.Stock, itemclickedhash)) {
 							// get amount to add - default is one, or entire stack clicked, or entire inventory of the type
 							if (clicktype == ClickType.SHIFT_LEFT) {
 								stockaddamount = itemclicked.getAmount();
 							} else if (clicktype == ClickType.RIGHT) {
-								stockaddamount = getPlayerInventoryCount(player, itemclicked.getType().name());
+								stockaddamount = getPlayerInventoryCount(player, itemclickedhash);
 							}
 
-							ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, itemclicked.getType().name());
+							ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, itemclickedhash);
 
 							// check for stock limit breach and adjust down as necessary if there's space for more items
 							if (stockitem.getStockQuantity() < shop.getStockLimit()) {
@@ -424,11 +426,11 @@ public class MenuAction implements Listener {
 									stockitem.addStock(stockaddamount);
 									itemclicked.setAmount(itemclicked.getAmount() - stockaddamount);
 								}
-								shop.saveShop();
+//								shop.saveShop();
 
 								// inform user operation completed
 								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Added " + ChatColor.GRAY + itemclicked.getType().name().toLowerCase() + ChatColor.GREEN + " to stock");
-								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " items placed into stock");
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " item" + (stockaddamount != 1 ? "s" : "") + " placed into stock");
 								if (limitreached) {
 									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item. ");
 								}
@@ -543,7 +545,7 @@ public class MenuAction implements Listener {
 								.onClose(p -> {})
 								.onComplete((p, guireturnvalue) -> {
 									shop.setStockLimit(SanitizeLimit(shop.getStockLimit(), OBChestShop.getInstance().getConfig().getInt("maxstocklimit"), guireturnvalue));
-									shop.saveShop();
+//									shop.saveShop();
 									return AnvilGUI.Response.close();
 								})
 								.plugin(OBChestShop.getInstance())
@@ -583,33 +585,45 @@ public class MenuAction implements Listener {
 							break;
 						}
 						int configslot = event.getRawSlot() + ((page-1) * 36);
-						ItemConfig itemconfig = new ItemConfig(type, player, shopname, shop.getShopItem(type, configslot), page);
+						ItemConfig itemconfig = new ItemConfig(type, player, shopname, shop.getShopItemBySlot(type, configslot), page);
 						itemconfig.draw();
 					}
 
 					// ADD ITEM TO SHOP OR STOCK TO ITEM
 					if (event.getRawSlot() > 53 && event.getRawSlot() < 90) {
+						
+						// we can only add skulls of players who have joined the server right now
+						if (itemclicked.getType().equals(Material.PLAYER_HEAD) && itemclicked.getItemMeta() instanceof SkullMeta) {
+							SkullMeta skullmeta = (SkullMeta) itemclicked.getItemMeta();
+							if (!skullmeta.getOwningPlayer().hasPlayedBefore()) {
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100, 100);
+								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Player heads limited to players who have joined the server.");
+								return;
+							}
+						}
 
+						int itemclickedhash = Utils.GenerateItemHash(itemclicked);
+						
 						int stockaddamount = 1;
 						boolean limitreached = false;
 
 						boolean stockadd = false;
 						if (type.equals(ShopItemTypes.Stock)) {
-							if (shop.itemListContains(ShopItemTypes.Sell, itemclicked.getType().name()) ||
-								shop.itemListContains(ShopItemTypes.Buy, itemclicked.getType().name())) {
+							if (shop.itemListContains(ShopItemTypes.Sell, itemclickedhash) ||
+								shop.itemListContains(ShopItemTypes.Buy, itemclickedhash)) {
 								stockadd = true;
 							}
 						}
 						// add item to buy or sell lists, or add stock to existing item
 						if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Buy) || stockadd) {
-							if (!shop.itemListContains(type, itemclicked.getType().name())) {
+							if (!shop.itemListContains(type, itemclickedhash)) {
 								if (shop.hasSpace(type)) {
 
 									// get amount to add - one, entire stack clicked, or entire inventory of the type
 									if (clicktype == ClickType.SHIFT_LEFT && type.equals(ShopItemTypes.Sell)) {
 										stockaddamount = itemclicked.getAmount();
 									} else if (clicktype == ClickType.RIGHT && type.equals(ShopItemTypes.Sell)) {
-										stockaddamount = getPlayerInventoryCount(player, itemclicked.getType().name());
+										stockaddamount = getPlayerInventoryCount(player, itemclickedhash);
 									}
 
 									// check for stock limit breach and adjust down as necessary
@@ -617,23 +631,25 @@ public class MenuAction implements Listener {
 										stockaddamount = shop.getStockLimit();
 										limitreached = true;
 									}
-									
+
+									// create a clone of the clicked item
+									ItemStack cloneitem = itemclicked.clone();
+									cloneitem.setAmount(1);
+
 									// create a stock item if not already one there - we don't need to check for space
 									// because if there's buy or sell space, then there's got to be stock space
 									ShopItem stockitem = null;
-									if (!shop.itemListContains(ShopItemTypes.Stock, itemclicked.getType().name())) {
-										shop.addShopItem(ShopItemTypes.Stock, new ShopItem(shop.getNextOpenSlot(ShopItemTypes.Stock), itemclicked.getType().name(), 0));
+									if (!shop.itemListContains(ShopItemTypes.Stock, itemclickedhash)) {
+										shop.addShopItem(ShopItemTypes.Stock, new ShopItem(shop.getNextOpenSlot(ShopItemTypes.Stock), cloneitem, 0));
 									}
-									stockitem = shop.getShopItem(ShopItemTypes.Stock, itemclicked.getType().name());
+									stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, itemclickedhash);
 
-									// create an item in the inventory based off what was clicked
-									ItemStack cloneitem = itemclicked.clone();
-									cloneitem.setAmount(1);
+									// create an item in the shop inventory based off what was clicked
 									int openslot = shop.getNextOpenSlot(type);
 									event.getInventory().setItem(openslot, cloneitem);
 
 									// add item to appropriate sell or buy list
-									shop.addShopItem(type, new ShopItem(openslot, itemclicked.getType().name(), 0));
+									shop.addShopItem(type, new ShopItem(openslot, cloneitem, 0));
 									
 									// move inventory for sell - don't need to move anything for buy item add
 									if (type.equals(ShopItemTypes.Sell)) {
@@ -644,12 +660,12 @@ public class MenuAction implements Listener {
 											itemclicked.setAmount(itemclicked.getAmount() - stockaddamount);
 										}
 									}
-									shop.saveShop();
+//									shop.saveShop();
 									
 									// inform user operation completed
 									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Added " + ChatColor.GRAY + cloneitem.getType().name().toLowerCase() + ChatColor.GREEN + " to shop " + (type.equals(ShopItemTypes.Sell) ? "sell" : "buy")+ " list");
 									if (type.equals(ShopItemTypes.Sell)) {
-										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " items placed into stock");
+										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " item " + (stockaddamount != 1 ? "s" : "") + " placed into stock");
 										if (limitreached) {
 											player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached for this item. ");
 										}
@@ -660,21 +676,23 @@ public class MenuAction implements Listener {
 									settingsmenu.draw();
 
 								} else {
-									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Unable to add item to shop's " + (type.equals(ShopItemTypes.Sell) ? "sell" : "buy") + " list as there's no space");								
+									player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Shop Full! Unable to add item" + (itemclicked.getAmount() != 1 ? "s" : "") + " to shop's " + (type.equals(ShopItemTypes.Sell) ? "sell" : "buy") + " list as there's no space");								
 								}
 							} else {
 								// add stock to existing item - sell and stock
 								// get amount to add - one, entire stack clicked, or entire inventory of the type
 								if (type.equals(ShopItemTypes.Sell) || type.equals(ShopItemTypes.Stock)) {
 								
+									//int clickhash = Utils.GenerateItemHash(itemclicked);
+							    	
 									// get quantity to add based on click type
 									if (clicktype == ClickType.SHIFT_LEFT) {
 										stockaddamount = itemclicked.getAmount();
 									} else if (clicktype == ClickType.RIGHT) {
-										stockaddamount = getPlayerInventoryCount(player, itemclicked.getType().name());
+										stockaddamount = getPlayerInventoryCount(player, itemclickedhash);
 									}
 
-									ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, itemclicked.getType().name());
+									ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, itemclickedhash);
 
 									if (stockitem.getStockQuantity() < shop.getStockLimit()) {
 
@@ -691,7 +709,7 @@ public class MenuAction implements Listener {
 											stockitem.addStock(stockaddamount);
 											itemclicked.setAmount(itemclicked.getAmount() - stockaddamount);
 										}
-										shop.saveShop();
+//										shop.saveShop();
 										
 										player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GRAY + stockaddamount + ChatColor.GREEN + " items placed into stock");
 										if (limitreached) {
@@ -745,7 +763,7 @@ public class MenuAction implements Listener {
 					}
 
 					String itemname = (shopview.split(" ", 0)[1]).replace("]", "");
-					ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItem(type, itemslot);
+					ShopItem shopitem = OBChestShop.getShopList().getShop(shopname).getShopItemBySlot(type, itemslot);
 
 					// REMOVE ITEM
 					if (event.getRawSlot() == 8 && itemclicked.getType().name().equals("BARRIER") && clicktype == ClickType.LEFT) {
@@ -754,18 +772,18 @@ public class MenuAction implements Listener {
 							shopitem.moveStockToInventory(player.getUniqueId().toString(), shopitem.getStockQuantity());
 							OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Stock, shopitem.getSlot());
 							// remove any sell items for this stock item
-							if (shop.itemListContains(ShopItemTypes.Sell, shopitem.getItemName())) {
-								ShopItem sellitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Sell, shopitem.getItemName());
+							if (shop.itemListContains(ShopItemTypes.Sell, shopitem.getItemHash())) {
+								ShopItem sellitem = OBChestShop.getShopList().getShop(shopname).getShopItemByHash(ShopItemTypes.Sell, shopitem.getItemHash());
 								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Sell, sellitem.getSlot());
 							}
 							// remove any buy items for this stock item
-							if (shop.itemListContains(ShopItemTypes.Buy, shopitem.getItemName())) {
-								ShopItem buyitem = OBChestShop.getShopList().getShop(shopname).getShopItem(ShopItemTypes.Buy, shopitem.getItemName());
+							if (shop.itemListContains(ShopItemTypes.Buy, shopitem.getItemHash())) {
+								ShopItem buyitem = OBChestShop.getShopList().getShop(shopname).getShopItemByHash(ShopItemTypes.Buy, shopitem.getItemHash());
 								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Buy, buyitem.getSlot());
 							}
 
 						} else {
-							ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+							ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, shopitem.getItemHash());
 							// close out any player menus if they are accessing this item
 							for (Player onlineplayer : Bukkit.getOnlinePlayers()) {
 								if (shop.isPlayerAccessingItem(onlineplayer, type, itemname)) {
@@ -774,18 +792,18 @@ public class MenuAction implements Listener {
 								}
 							}
 							// determine whether to remove stock item
-							if (type.equals(ShopItemTypes.Sell) && !shop.itemListContains(ShopItemTypes.Buy, shopitem.getItemName())) {
+							if (type.equals(ShopItemTypes.Sell) && !shop.itemListContains(ShopItemTypes.Buy, shopitem.getItemHash())) {
 								stockitem.moveStockToInventory(player.getUniqueId().toString(), stockitem.getStockQuantity());
 								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Stock, stockitem.getSlot());
 							}
-							if (type.equals(ShopItemTypes.Buy) && !shop.itemListContains(ShopItemTypes.Sell, shopitem.getItemName())) {
+							if (type.equals(ShopItemTypes.Buy) && !shop.itemListContains(ShopItemTypes.Sell, shopitem.getItemHash())) {
 								stockitem.moveStockToInventory(player.getUniqueId().toString(), stockitem.getStockQuantity());
 								OBChestShop.getShopList().getShop(shopname).removeitem(ShopItemTypes.Stock, stockitem.getSlot());
 							}
 							// remove actual item
 							OBChestShop.getShopList().getShop(shopname).removeitem(type, itemslot);
 						}
-						shop.saveShop();
+//						shop.saveShop();
 						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Removed " + ChatColor.GRAY + itemname.toLowerCase() + ChatColor.GREEN + " from shop");
 						OBChestShop.menunav.pop();
 						Settings settingsmenu = new Settings(type, player, shopname, page);
@@ -804,7 +822,7 @@ public class MenuAction implements Listener {
 								.onClose(p -> {})
 								.onComplete((p, guireturnvalue) -> {
 									shopitem.setPrice(SanitizePrice(shopitem.getPrice(), guireturnvalue));
-									OBChestShop.getShopList().getShop(shopname).saveShop();
+//									OBChestShop.getShopList().getShop(shopname).saveShop();
 									Settings settingsmenu = new Settings(type, player, shopname, 1);
 									settingsmenu.draw(); 
 									return AnvilGUI.Response.close();
@@ -833,7 +851,7 @@ public class MenuAction implements Listener {
 								.onClose(p -> {})
 								.onComplete((p, guireturnvalue) -> {
 									shopitem.setDescription(guireturnvalue.replace(",", ""));
-									OBChestShop.getShopList().getShop(shopname).saveShop();
+//									OBChestShop.getShopList().getShop(shopname).saveShop();
 									Settings settingsmenu = new Settings(type, player, shopname, 1);
 									settingsmenu.draw(); 
 									return AnvilGUI.Response.close();
@@ -898,7 +916,7 @@ public class MenuAction implements Listener {
 								// TODO: add boolean return on move inventory method
 								// TODO: raises bigger issue of transaction integrity and rollback
 								shopitem.moveInventoryToStock(player.getUniqueId().toString(), stockchangeamount);
-								OBChestShop.getShopList().getShop(shopname).saveShop();
+//								OBChestShop.getShopList().getShop(shopname).saveShop();
 							}
 							if (breach) {
 								player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Stock limit of " + ChatColor.GRAY + shop.getStockLimit() + ChatColor.RED + " reached. ");
@@ -947,7 +965,7 @@ public class MenuAction implements Listener {
 							// TODO: add boolean return on move method
 							// TODO: raises bigger issue of transaction integrity and rollback
 							shopitem.moveStockToInventory(player.getUniqueId().toString(), stockchangeamount);
-							OBChestShop.getShopList().getShop(shopname).saveShop();
+//							OBChestShop.getShopList().getShop(shopname).saveShop();
 
 							// update visual inventory (in the item display name)
 							ItemMeta itemmeta = event.getClickedInventory().getItem(4).getItemMeta();
@@ -1044,14 +1062,14 @@ public class MenuAction implements Listener {
 	}
 	
 	// get player inventory count of item
-	private int getPlayerInventoryCount(Player player, String itemname) {
+	private int getPlayerInventoryCount(Player player, int hash) {
         int onhand = 0;
         ItemStack checkitem = null;
 		Inventory playerinv = player.getInventory();
 		// get count of player inventory of item
 		for (int i = 0; i < 40; i++) {
 			checkitem = playerinv.getItem(i);
-			if (checkitem != null && checkitem.getType().name().equals(itemname)) {
+			if (checkitem != null && Utils.GenerateItemHash(checkitem) == hash) {
 				onhand += checkitem.getAmount();
 			}
 		}

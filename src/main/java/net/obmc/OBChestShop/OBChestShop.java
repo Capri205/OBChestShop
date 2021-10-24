@@ -1,6 +1,5 @@
 package net.obmc.OBChestShop;
 
-import java.util.Iterator;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +19,6 @@ import net.obmc.OBChestShop.Listeners.ShopCreation;
 import net.obmc.OBChestShop.Listeners.ShopOpen;
 import net.obmc.OBChestShop.Listeners.ShopRemoval;
 import net.obmc.OBChestShop.Menus.MenuTypes;
-import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.Tasks.ShopChecker;
 
 public class OBChestShop extends JavaPlugin {

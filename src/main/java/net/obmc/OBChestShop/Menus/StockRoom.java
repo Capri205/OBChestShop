@@ -108,7 +108,7 @@ public class StockRoom {
         while (isit.hasNext()) {
         	slot = isit.next();
         	if (slot >= startslot && slot <= endslot) {
-        		shopitem = shop.getShopItem(ShopItemTypes.Stock, slot);
+        		shopitem = shop.getShopItemBySlot(ShopItemTypes.Stock, slot);
         		item = shopitem.getItem();
             	itemmeta = item.getItemMeta();
             	itemmeta.setLore(Arrays.asList(shopitem.getLore(shopname, ShopItemTypes.Stock).split(",")));

@@ -29,7 +29,7 @@ public class ItemSell {
 		
 		this.player = player;
     	this.shop = OBChestShop.getShopList().getShop(shopname);
-		ShopItem stockitem = shop.getShopItem(ShopItemTypes.Stock, shopitem.getItemName());
+		ShopItem stockitem = shop.getShopItemByHash(ShopItemTypes.Stock, shopitem.getItemHash());
     	inv = Bukkit.createInventory(null, 54, ChatColor.DARK_AQUA + "[SELL " + shopitem.getItem().getType().name() + "]" + " " + ChatColor.DARK_GREEN + shopname);
     	inv.clear();
     	

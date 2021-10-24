@@ -216,11 +216,9 @@ public class LiveShopList {
 	// retrieve a shop by sign location
 	public String getShopnameBySignLocation(Location loc) {
 		for (Shop shop : shoplist.values()) {
-			//if (shop.getState().compareTo(ShopState.ShopOK) == 0) {
-				if (locationEquals(shop.getSignXYZ(), loc)) {
-					return shop.getName();
-				}
-			//}
+			if (locationEquals(shop.getSignXYZ(), loc)) {
+				return shop.getName();
+			}
 		}
 		return "";
 	}
