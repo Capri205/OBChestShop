@@ -147,6 +147,7 @@ public class ShopItem {
 		while (quantitytomove > 0) {
 			// set stack quantity
 			ItemStack moveitem = item.clone();
+			Utils.StripShopLore(moveitem);
 			if (partial > 0) {
 				moveitem.setAmount(partial);
 				partial = 0;
