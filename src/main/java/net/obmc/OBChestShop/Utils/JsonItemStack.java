@@ -73,13 +73,18 @@ public class JsonItemStack {
                 meta.getLore().forEach(str -> lore.add(new JsonPrimitive(str)));
                 metaJson.add("lore", lore);
             }
-            // enchantments
+            // enchantments - add to collection, sort and push into json array
             if (meta.hasEnchants()) {
-                JsonArray enchants = new JsonArray();
+                JsonArray enchantsJson = new JsonArray();
+                List<String> enchants = new ArrayList<String>();
                 meta.getEnchants().forEach((enchantment, integer) -> {
-                    enchants.add(new JsonPrimitive(enchantment.getKey().toString() + ":" + integer));
+                	enchants.add(enchantment.getKey().toString() + ":" + integer);
                 });
-                metaJson.add("enchants", enchants);
+                Collections.sort(enchants);
+                enchants.forEach((enchantment) -> {
+                	enchantsJson.add(new JsonPrimitive(enchantment));
+                });
+                metaJson.add("enchants", enchantsJson);
             }
             // flags
             if (!meta.getItemFlags().isEmpty()) {
