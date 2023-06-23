@@ -43,21 +43,36 @@ public class Settings {
     	ItemStack name = new ItemStack(Material.NAME_TAG);
         ItemMeta nameMeta = name.getItemMeta();
         nameMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Change Name");
-        nameMeta.setLore(Arrays.asList(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to change shop " + ChatColor.LIGHT_PURPLE + " Name"));
+        nameMeta.setLore(Arrays.asList(
+            	ChatColor.YELLOW + "" + ChatColor.BOLD + "Current Name: " + ChatColor.GRAY + "" + ChatColor.BOLD + shop.getName(),
+            	" ",
+            	ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to change shop " + ChatColor.LIGHT_PURPLE + " Name"
+        ));
         name.setItemMeta(nameMeta);
         inv.setItem(2, name);
 
     	ItemStack desc = new ItemStack(Material.NAME_TAG);
         ItemMeta descMeta = desc.getItemMeta();
         descMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Change Description");
-        descMeta.setLore(Arrays.asList(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to change shop " + ChatColor.LIGHT_PURPLE + " Description"));
+        String description = shop.getDescription();
+        if (shop.getDescription() == null || shop.getDescription().isEmpty()) {
+        	description = ChatColor.ITALIC + "" + "no description set";
+        }
+        descMeta.setLore(Arrays.asList(
+        	ChatColor.YELLOW + "" + ChatColor.BOLD + "Current Description: " + ChatColor.GRAY + "" + ChatColor.BOLD + description,
+        	" ",
+        	ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to change shop " + ChatColor.LIGHT_PURPLE + " Description"
+		));
         desc.setItemMeta(descMeta);
         inv.setItem(4, desc);
 
     	ItemStack limit = new ItemStack(Material.COMPASS);
         ItemMeta limitMeta = limit.getItemMeta();
         limitMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Set Stock Limit");
-        limitMeta.setLore(Arrays.asList(ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to change shop " + ChatColor.LIGHT_PURPLE + " stock limit"));
+        limitMeta.setLore(Arrays.asList(ChatColor.YELLOW + "" + ChatColor.BOLD + "Current Limit: " + ChatColor.GRAY + "" + ChatColor.BOLD + shop.getStockLimit(),
+        								" ",
+        								ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to change shop " + ChatColor.LIGHT_PURPLE + " stock limit")
+        );
         limit.setItemMeta(limitMeta);
         inv.setItem(6, limit);
 

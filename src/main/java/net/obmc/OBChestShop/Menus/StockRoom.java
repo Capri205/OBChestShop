@@ -57,6 +57,7 @@ public class StockRoom {
         optionsMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + shopname);
         optionsMeta.setLore(Arrays.asList(ChatColor.GRAY + "" + shop.getDescription(), " ",
         		ChatColor.YELLOW + "" + ChatColor.BOLD + "Owner: " + ChatColor.GREEN + "" + ChatColor.BOLD + shop.getOwnerName(),
+        		ChatColor.YELLOW + "" + ChatColor.BOLD + "Stock Limit: " + ChatColor.GRAY + "" + ChatColor.BOLD + shop.getStockLimit(),
         		" ",
         		ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to open " + ChatColor.LIGHT_PURPLE + "Shop Settings",
         		" "));

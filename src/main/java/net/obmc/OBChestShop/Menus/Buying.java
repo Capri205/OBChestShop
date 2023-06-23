@@ -66,11 +66,21 @@ public class Buying {
         	optionsmsg = ChatColor.YELLOW + "" + ChatColor.BOLD + "Left Click " + ChatColor.GRAY + "to open " + ChatColor.LIGHT_PURPLE + "Shop Settings";
         }
         optionsMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + shopname);
-        optionsMeta.setLore(Arrays.asList(ChatColor.GRAY + "" + shop.getDescription(), " ",
+        String description = ChatColor.GRAY + "" + shop.getDescription();
+        if ((shop.getDescription() == null || shop.getDescription().isEmpty()) && player.getUniqueId().toString().equals(shop.getOwner())) {
+        	description = ChatColor.GRAY + "" + ChatColor.ITALIC + "" + "no description set yet!";
+        }
+        optionsMeta.setLore(
+        	Arrays.asList(
+        		description,
+        		" ",
         		ChatColor.YELLOW + "" + ChatColor.BOLD + "Owner: " + ChatColor.GREEN + "" + ChatColor.BOLD + shop.getOwnerName(),
+        		ChatColor.YELLOW + "" + ChatColor.BOLD + "Stock Limit: " + ChatColor.GRAY + "" + ChatColor.BOLD + shop.getStockLimit(),
         		" ",
         		optionsmsg,
-        		" "));
+        		" "
+        	)
+        );
         options.setItemMeta(optionsMeta);
     	inv.setItem(8, options);
     	

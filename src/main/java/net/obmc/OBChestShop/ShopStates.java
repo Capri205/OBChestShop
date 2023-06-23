@@ -10,7 +10,7 @@ public class ShopStates {
     	ShopPreChecks,															// initial load of shop data complete
     		NoChestConfig, ChestConfigOK, NotShopChest, FixChestFail, ChestOK,	// chest config and world block
     		NoSignConfig, SignConfigOK, NotShopSign, FixSignFail, SignOK,		// sign config and world block
-        	ShopMAINT,															// shop maintenance mode
+        	ShopMAINT, ShopLostOwner,											// shop maintenance mode
     	ShopOK,																	// final ok state
 
     }

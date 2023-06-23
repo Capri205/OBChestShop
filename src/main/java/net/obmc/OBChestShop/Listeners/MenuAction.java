@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.Tag;
 import org.bukkit.entity.Player;
@@ -21,6 +22,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import net.wesjd.anvilgui.AnvilGUI;
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Menus.Selling;
 import net.obmc.OBChestShop.Menus.Buying;
@@ -34,13 +36,15 @@ import net.obmc.OBChestShop.Shop.Shop;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
 import net.obmc.OBChestShop.Utils.Utils;
-import net.wesjd.anvilgui.AnvilGUI;
+
 
 public class MenuAction implements Listener {
 
 	Logger log = Logger.getLogger("Minecraft");
 	
 	enum ClickType { LEFT, RIGHT, SHIFT_LEFT, SHIFT_RIGHT };
+	
+	private Player player = null;
 
 	@EventHandler
 	public void clickEvent(InventoryClickEvent event) {
@@ -49,7 +53,7 @@ public class MenuAction implements Listener {
 
 		if (event.getCurrentItem() != null) {
 
-			Player player = (Player) event.getWhoClicked();
+			player = (Player)event.getWhoClicked();
 
 			ClickType clicktype = ClickType.LEFT;
 			if (event.isRightClick() && !event.isShiftClick()) {
@@ -226,12 +230,10 @@ public class MenuAction implements Listener {
 								debitamt = shopitem.getPrice() * 64;
 								numitems = 64;
 							}
-							// deduct cost of items from player balance, give player their items, credit shop owner
-							// TODO: add EconomyResponse ecr.type checking for not SUCCESS
-							OBChestShop.getEconomy().withdrawPlayer(player, debitamt);
 							stockitem.moveStockToInventory(player.getUniqueId().toString(), numitems);
-							Player shopowner = (Player) Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
-							OBChestShop.getEconomy().depositPlayer(shopowner, debitamt);
+							OfflinePlayer offlineshopowner = Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
+							OBChestShop.getEconomy().depositPlayer(offlineshopowner, debitamt);
+							OBChestShop.getEconomy().withdrawPlayer(player, debitamt);
 							player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully purchased item. "
 								+ ChatColor.GRAY + "$" + debitamt + ChatColor.GREEN + " removed from balance");
 							ItemSell itemsell = new ItemSell(player, shopname, shopitem);
@@ -305,16 +307,14 @@ public class MenuAction implements Listener {
 								// credit player, take items from player and place into stock if we are selling this item
 								// or place into storage and finally debit shop owner
 								// TODO: add EconomyResponse ecr.type checking for not SUCCESS
+								OfflinePlayer offlineshopowner = Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
 								OBChestShop.getEconomy().depositPlayer(player, creditamt);
-								// fill up sell item stock to limit first, then into stock item
+								OBChestShop.getEconomy().withdrawPlayer(offlineshopowner, creditamt);
 								stockitem.moveInventoryToStock(player.getUniqueId().toString(), numitems);
-								Player shopowner = (Player) Bukkit.getOfflinePlayer(UUID.fromString(shop.getOwner()));
-								OBChestShop.getEconomy().withdrawPlayer(shopowner, creditamt);
+								// fill up sell item stock to limit first, then into stock item
 								player.sendMessage(
-										OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully sold item" + (numitems != 1 ? "s. " : ". ")
-												+ ChatColor.GRAY + "$" + creditamt + ChatColor.GREEN + " added to balance");
-								// TODO: add titlemanager overlay message
-
+										OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Successfully sold item" + (numitems != 1 ? "s. " : ". ") +
+										ChatColor.GRAY + "$" + creditamt + ChatColor.GREEN + " added to balance");
 								ItemBuy itembuy = new ItemBuy(player, shopname, shopitem);
 								itembuy.draw();
 							}
@@ -483,21 +483,23 @@ public class MenuAction implements Listener {
 						guiitem.setItemMeta(meta);
 
 						gui = new AnvilGUI.Builder()
-								.text(shopname)
-								.title("Enter name:")
-								.itemLeft(guiitem)
-								.onClose(p -> {})
-								.onComplete((p, guireturnvalue) -> {
-									switch (OBChestShop.getShopList().getShop(shopname).setName(guireturnvalue)) {
-										case "ShopExists": player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "That shop name is already taken.");
-											break;
-										case "ok": player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop has been renamed.");
-											break;
-									}
-									return AnvilGUI.Response.close();
-								})
-								.plugin(OBChestShop.getInstance())
-								.open(player);
+							.text(shopname)
+							.title("Enter name:")
+							.itemLeft(guiitem)
+							.onClose(slot -> {})
+							.onClick((slot, stateSnapshot) -> {
+								switch (OBChestShop.getShopList().getShop(shopname).setName(stateSnapshot.getText())) {
+									case "ShopExists": player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "That shop name is already taken.");
+										break;
+									case "ok": player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.GREEN + "Shop has been renamed.");
+										break;
+								}
+								return Arrays.asList(
+									AnvilGUI.ResponseAction.close()
+								);
+							})
+							.plugin(OBChestShop.getInstance())
+							.open(player);
 					}
 
 					// CHANGE SHOP DESCRIPTION
@@ -515,16 +517,18 @@ public class MenuAction implements Listener {
 						}
 
 						gui = new AnvilGUI.Builder()
-								.text(description)
-								.title("Enter description:")
-								.itemLeft(guiitem)
-								.onClose(p -> {})
-								.onComplete((p, guireturnvalue) -> {
-									OBChestShop.getShopList().getShop(shopname).setDescription(guireturnvalue);
-									return AnvilGUI.Response.close();
-								})
-								.plugin(OBChestShop.getInstance())
-								.open(player);
+							.text(description)
+							.title("Enter description:")
+							.itemLeft(guiitem)
+							.onClose(stateSnapshot -> {})
+							.onClick((slot, stateSnapshot) -> {
+								OBChestShop.getShopList().getShop(shopname).setDescription(stateSnapshot.getText());
+								return Arrays.asList(
+									AnvilGUI.ResponseAction.close()
+								);
+							})
+							.plugin(OBChestShop.getInstance())
+							.open(player);
 					}
 
 					// SET STOCK LIMIT
@@ -539,17 +543,19 @@ public class MenuAction implements Listener {
 						String stocklimit = OBChestShop.getShopList().getShop(shopname).getStockLimit().toString();
 
 						gui = new AnvilGUI.Builder()
-								.text(stocklimit)
-								.title("Enter stock limit:")
-								.itemLeft(guiitem)
-								.onClose(p -> {})
-								.onComplete((p, guireturnvalue) -> {
-									shop.setStockLimit(SanitizeLimit(shop.getStockLimit(), OBChestShop.getInstance().getConfig().getInt("maxstocklimit"), guireturnvalue));
-//									shop.saveShop();
-									return AnvilGUI.Response.close();
-								})
-								.plugin(OBChestShop.getInstance())
-								.open(player);
+							.text(stocklimit)
+							.title("Enter stock limit:")
+							.itemLeft(guiitem)
+							.onClose(stateSnapshot -> {})
+							.onClick((slot, stateSnapshot) -> {
+								shop.setStockLimit(SanitizeLimit(shop.getStockLimit(), OBChestShop.getInstance().getConfig().getInt("maxstocklimit"), stateSnapshot.getText()));
+//								shop.saveShop();
+								return Arrays.asList(
+									AnvilGUI.ResponseAction.close()
+								);
+							})
+							.plugin(OBChestShop.getInstance())
+							.open(player);
 					}
 
 					// TOGGLE SHOP OPEN/CLOSED
@@ -816,19 +822,20 @@ public class MenuAction implements Listener {
 						ItemStack guiitem = new ItemStack(Material.EMERALD, 1);
 
 						gui = new AnvilGUI.Builder()
-								.text(shopitem.getPriceFormatted())
-								.title("Enter new price:")
-								.itemLeft(guiitem)
-								.onClose(p -> {})
-								.onComplete((p, guireturnvalue) -> {
-									shopitem.setPrice(SanitizePrice(shopitem.getPrice(), guireturnvalue));
-//									OBChestShop.getShopList().getShop(shopname).saveShop();
-									Settings settingsmenu = new Settings(type, player, shopname, 1);
-									settingsmenu.draw(); 
-									return AnvilGUI.Response.close();
-								})
-								.plugin(OBChestShop.getInstance())
-								.open(player);
+							.text(shopitem.getPriceFormatted())
+							.title("Enter new price:")
+							.itemLeft(guiitem)
+							.onClose(stateSnapshot -> {})
+							.onClick((slot, stateSnapshot) -> {
+								shopitem.setPrice(SanitizePrice(shopitem.getPrice(), stateSnapshot.getText()));
+								Settings settingsmenu = new Settings(type, player, shopname, 1);
+								settingsmenu.draw();
+								return Arrays.asList(
+									AnvilGUI.ResponseAction.close()
+								);
+							})
+							.plugin(OBChestShop.getInstance())
+							.open(player);
 					}
 
 					// ITEM DESCRIPTION CHANGE
@@ -845,19 +852,21 @@ public class MenuAction implements Listener {
 						guiitem.setItemMeta(itemmeta);
 
 						gui = new AnvilGUI.Builder()
-								.text(description)
-								.title("Enter new description:")
-								.itemLeft(guiitem)
-								.onClose(p -> {})
-								.onComplete((p, guireturnvalue) -> {
-									shopitem.setDescription(guireturnvalue.replace(",", ""));
-//									OBChestShop.getShopList().getShop(shopname).saveShop();
-									Settings settingsmenu = new Settings(type, player, shopname, 1);
-									settingsmenu.draw(); 
-									return AnvilGUI.Response.close();
-								})
-								.plugin(OBChestShop.getInstance())
-								.open(player);
+							.text(description)
+							.title("Enter new description:")
+							.itemLeft(guiitem)
+							.onClose(stateSnapshot -> {})
+							.onClick((slot, stateSnapshot) -> {
+								shopitem.setDescription(stateSnapshot.getText().replace(",", ""));
+//								OBChestShop.getShopList().getShop(shopname).saveShop();
+								Settings settingsmenu = new Settings(type, player, shopname, 1);
+								settingsmenu.draw(); 
+								return Arrays.asList(
+									AnvilGUI.ResponseAction.close()
+								);
+							})
+							.plugin(OBChestShop.getInstance())
+							.open(player);
 					}
 
 					// INCREASE STOCK
@@ -993,14 +1002,15 @@ public class MenuAction implements Listener {
 				try {
 					bdc = new BigDecimal(newprice).setScale(2, RoundingMode.HALF_UP);
 				} catch (Exception e) {
-					log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Failed to create new price from " + newprice);
+					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Failed to create new price from " + newprice);
+					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Check your entry and make sure it's a valid price format");
 					e.printStackTrace();
 				} finally {
 					Double d = bdc.doubleValue();
 					if (d >= 0) {
 						return d;
 					} else {
-						log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "New price of " + newprice + "invalid. Must be >= zero");	
+						player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "New price of " + newprice + " is invalid. Must be >= zero");
 					}
 				}
 			} catch (NumberFormatException e) {
@@ -1008,35 +1018,12 @@ public class MenuAction implements Listener {
 				return currentprice;
 			}
 		} else {
-			log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "New price of " + newprice + " doesn't match our price specification");
+			player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "New price of " + newprice + " doesn't match the price specification");
+			player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Check what you entered and make sure it's a proper price format");
 		}
 		return currentprice;
 	}
 
-	// return a new sanitized integer amount value or return the current amount if invalid
-	private int SanitizeAmount(Integer currentamount, String newamount) {
-		String INTEGER_PATTERN = "\\d+";
-		
-		if (Pattern.matches(INTEGER_PATTERN,  newamount)) {
-			Integer i = null;
-			try {
-				i = Integer.parseInt(newamount);
-			} catch (NumberFormatException e) {
-				log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Failed to create new amount of " + newamount);
-				e.printStackTrace();
-			} finally {
-				if (i > 0 ) {
-					return i;
-				} else {
-					log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "New amount of " + newamount + "invalid. Must be > zero");
-				}
-			}
-		} else {
-			log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "New amount of " + newamount + " doesn't match our integer specification");
-		}
-		return currentamount;
-	}
-	
 	// return a new sanitized integer limit or the current limit if invalid
 	private int SanitizeLimit(Integer currentlimit, Integer maxlimit, String newlimit) {
 		String INTEGER_PATTERN = "\\d+";
@@ -1046,17 +1033,18 @@ public class MenuAction implements Listener {
 			try {
 				i = Integer.parseInt(newlimit);
 			} catch (NumberFormatException e) {
-				log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "Failed to create new limit of " + newlimit);
+				player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Failed to creat a new limit of " + newlimit);
+				player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "Check the values you entered and try again");
 				e.printStackTrace();
 			} finally {
 				if (i >= 0  && i <= maxlimit) {
 					return i;
 				} else {
-					log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "New limit of " + newlimit + "invalid. Must be >= 0 and < " + maxlimit);
+					player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "New limit of " + newlimit + " is invalid. Must be >= 0 and < " + maxlimit);
 				}
 			}
 		} else {
-			log.log(Level.INFO, OBChestShop.getLogMsgPrefix() + "New limit of " + newlimit + " doesn't match our integer specification");
+			player.sendMessage(OBChestShop.getChatMsgPrefix() + ChatColor.RED + "New limit of " + newlimit + " doesn't match the integer specification. Make sure it's just numbers and within limits.");
 		}
 		return currentlimit;
 	}

@@ -1,20 +1,27 @@
 package net.obmc.OBChestShop.Utils;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.type.Sign;
-import org.bukkit.block.data.type.WallSign;
 
 public class BlockUtils {
 
-	// return the block a wall sign is attached to, or return the block below if on top of the block
+	static Logger log = Logger.getLogger("Minecraft");
+
+	// return the block below by default, except for a wall sign
 	public static Block getSignAttachedBlock(Block b) {
-		if (b.getBlockData() instanceof Directional) {
+		
+		// assume sign is above the container or on the container for certain types
+		Block attachedtoblock = b.getRelative(BlockFace.DOWN);
+		if (Tag.WALL_SIGNS.isTagged(b.getType())) {
 			Directional d = (Directional)b.getBlockData();
-			return b.getRelative(d.getFacing().getOppositeFace());
+			attachedtoblock = b.getRelative(d.getFacing().getOppositeFace());
 		}
-		return b.getRelative(BlockFace.DOWN);
+		return attachedtoblock;
 	}
 	
 	// return the block face the sign is on - return self if not a wall sign

@@ -1,7 +1,7 @@
 name: OBChestShop
 main: net.obmc.OBChestShop.OBChestShop
 version: 1.0
-api-version: 1.20
+api-version: "1.20"
 author: Fahrenheit451
 depend: [Vault]
 softdepend: [Multiverse-Core]

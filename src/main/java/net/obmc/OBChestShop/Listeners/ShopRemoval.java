@@ -8,7 +8,9 @@ import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -16,6 +18,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.ItemStack;
 
 import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
@@ -48,7 +51,15 @@ public class ShopRemoval implements Listener {
 	   				// remove chest also if just one shop on it
 	   				if (shopcount == 1) {
 	   					Location chestloc = OBChestShop.getShopList().getShopChestLocation(shopname);
-	   					Bukkit.getWorld(block.getWorld().getName()).getBlockAt(chestloc).breakNaturally();
+	   					// ender chest based shop drops ingredients, so treat it differently
+	   					if ( chestblock.getType().equals(Material.ENDER_CHEST)) {
+	   						Bukkit.getWorld(block.getWorld().getName()).getBlockAt(chestloc).setType(Material.AIR);
+	   						if (player.getGameMode().equals(GameMode.SURVIVAL)) {
+	   							Bukkit.getWorld(block.getWorld().getName()).dropItem(chestloc, new ItemStack(Material.ENDER_CHEST, 1));
+	   						}
+	   					} else {
+	   						Bukkit.getWorld(block.getWorld().getName()).getBlockAt(chestloc).breakNaturally();
+	   					}
 	   				}
 
 	   				// close out inventory for any player accessing the doomed shop

@@ -20,6 +20,7 @@ import net.obmc.OBChestShop.OBChestShop;
 import net.obmc.OBChestShop.Shop.Shop;
 import net.obmc.OBChestShop.Shop.ShopItemTypes;
 import net.obmc.OBChestShop.ShopItem.ShopItem;
+import net.obmc.OBChestShop.Utils.Utils;
 
 public class ItemBuy {
 
@@ -62,7 +63,9 @@ public class ItemBuy {
 		// get count of player inventory of item
 		for (int i = 0; i < 40; i++) {
 			checkitem = playerinv.getItem(i);
-			if (checkitem != null && checkitem.getType().name().equals(shopitem.getItem().getType().name())) {
+			if ( checkitem == null ) continue;
+			int itemhash = Utils.GenerateItemHash(checkitem); 
+			if (checkitem != null && shopitem.getItemHash() == itemhash) {
 				onhand += checkitem.getAmount();
 			}
 		}

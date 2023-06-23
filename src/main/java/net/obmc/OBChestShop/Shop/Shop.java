@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,10 +20,10 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Sign;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
-import org.bukkit.block.data.type.Sign;
-import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -48,6 +47,7 @@ public class Shop {
     private Map<String, Object> chestdata;
     private Location chestloc;
     private Block signblock;
+    private boolean signdoublesided;
     private Map<String, Object> signdata;
     private Location signloc;
 
@@ -76,7 +76,10 @@ public class Shop {
 		world = chestloc.getWorld().getName();
 		chestblock = Bukkit.getWorld(world).getBlockAt(chestloc);
 		signloc = signlocation;
-        signblock = Bukkit.getWorld(world).getBlockAt(signloc);;
+        signblock = Bukkit.getWorld(world).getBlockAt(signloc);
+        if (Tag.ALL_HANGING_SIGNS.isTagged(signblock.getType()) || Tag.STANDING_SIGNS.isTagged(signblock.getType())) {
+        	signdoublesided = true;
+        }
         state = ShopState.NoShop;
 	}
 
@@ -137,6 +140,11 @@ public class Shop {
 				Double.parseDouble((String)signdata.get("Y")),
 				Double.parseDouble((String)signdata.get("Z")));
 		signblock = signloc.getBlock();
+        if (Tag.ALL_HANGING_SIGNS.isTagged(signblock.getType()) || Tag.STANDING_SIGNS.isTagged(signblock.getType())) {
+        	signdoublesided = true;
+        }
+        state = ShopState.NoShop;
+
 		state = ShopState.SignConfigOK;
 		
 		// shop chest - actual world block checks
@@ -233,12 +241,17 @@ public class Shop {
 		state = ShopState.ChestConfigOK;
 
 		data.put("Type", signblock.getType().toString());
-		if (signblock.getType().toString().contains("WALL_SIGN")) {
-			org.bukkit.block.data.type.WallSign s = (WallSign) signblock.getBlockData();
-			data.put("Facing", s.getFacing().toString());
-		} else {
-			org.bukkit.block.data.type.Sign s = (Sign) signblock.getBlockData();
-			data.put("Facing", s.getRotation().toString());
+
+		// get direction sign is facing based on type of sign
+		if (Tag.WALL_SIGNS.isTagged(signblock.getType()) || Tag.WALL_HANGING_SIGNS.isTagged(signblock.getType())) {
+			data.put("Facing", ((Directional) signblock.getBlockData() ).getFacing().toString());
+		}
+		if (Tag.STANDING_SIGNS.isTagged(signblock.getType()) || Tag.CEILING_HANGING_SIGNS.isTagged(signblock.getType())) {
+			if (Tag.ALL_HANGING_SIGNS.isTagged(signblock.getType())) {
+				data.put("Facing", ((org.bukkit.block.data.type.HangingSign)signblock.getBlockData()).getRotation().toString());
+			} else {
+				data.put("Facing", ((org.bukkit.block.data.type.Sign)signblock.getBlockData()).getRotation().toString());
+			}
 		}
 		data.put("X", String.valueOf(signblock.getX()));
 		data.put("Y", String.valueOf(signblock.getY()));
@@ -393,7 +406,7 @@ public class Shop {
 		if (!OBChestShop.getShopList().shopExists(newshopname)) {
 			maintenanceMode = true;
 
-			if (description.contains(shopname)) {
+			if (this.description != null && description.contains(shopname)) {
 				description = description.replace(shopname, newshopname);
 				shopconfig.set("Description", description);
 			}
@@ -545,9 +558,9 @@ public class Shop {
 		if (chestloc == null) {
 			try {
 				chestloc = new Location(Bukkit.getWorld(world),
-						Double.parseDouble((String)chestdata.get("X")),
-						Double.parseDouble((String)chestdata.get("Y")),
-						Double.parseDouble((String)chestdata.get("Z")));
+					Double.parseDouble((String)chestdata.get("X")),
+					Double.parseDouble((String)chestdata.get("Y")),
+					Double.parseDouble((String)chestdata.get("Z")));
 			} catch (Exception e) {
 				return ShopState.NotShopChest;
 			}
@@ -588,22 +601,19 @@ public class Shop {
 		} catch (NullPointerException e) {
 			return ShopState.NotShopSign;
 		}
-		if (Tag.SIGNS.isTagged(vsblock.getType())) {
-			if (vsblock.getBlockData() instanceof Directional || vsblock.getBlockData() instanceof Rotatable) {
-				// need to cater for wall and floor sign direction - wall sign is directional, floor sign rotatable 
-				String signdirection = "";
-				if (signdata.get("Type").toString().contains("WALL_SIGN")) {
-					signdirection = ((Directional)vsblock.getBlockData()).getFacing().toString();
-				} else {
-					signdirection = ((Rotatable)vsblock.getBlockData()).getRotation().toString();
-				}
-				if (vsblock.getType().toString().equals(signdata.get("Type")) && 
-						signdirection.equals(signdata.get("Facing"))) {
-					org.bukkit.block.Sign blocksign = (org.bukkit.block.Sign) vsblock.getState();
-					if (blocksign.getLine(1).equals("§aShop")) {
-						return ShopState.SignOK;
-					}
-				}
+
+		// need to cater for wall and floor sign direction - wall sign is directional, floor sign rotatable 
+		String signdirection = "";
+		if (Tag.WALL_SIGNS.isTagged(signblock.getType()) || Tag.WALL_HANGING_SIGNS.isTagged(signblock.getType())) {
+			signdirection = ((Directional)vsblock.getBlockData()).getFacing().toString();
+		}
+		if (Tag.STANDING_SIGNS.isTagged(signblock.getType()) || Tag.CEILING_HANGING_SIGNS.isTagged(signblock.getType())) {
+			signdirection = ((Rotatable)vsblock.getBlockData()).getRotation().toString();
+		}
+		if (vsblock.getType().toString().equals(signdata.get("Type")) && signdirection.equals(signdata.get("Facing"))) {
+			org.bukkit.block.Sign blocksign = (org.bukkit.block.Sign) vsblock.getState();
+			if (blocksign.getSide(Side.FRONT).getLine(1).equals("§aShop")) {
+				return ShopState.SignOK;
 			}
 		}
 		return ShopState.NotShopSign;
@@ -634,24 +644,38 @@ public class Shop {
 			return ShopState.FixSignFail;
 		}
 		signblock.setType(Material.getMaterial(signdata.get("Type").toString()));
-		if (signdata.get("Type").toString().contains("WALL_SIGN")) {
+		
+		// get direction/rotation of sign
+		if (Tag.WALL_SIGNS.isTagged(signblock.getType()) || Tag.WALL_HANGING_SIGNS.isTagged(signblock.getType())) {
 			Directional signbd = (Directional)signblock.getBlockData();
 			signbd.setFacing(BlockFace.valueOf(signdata.get("Facing").toString()));
 			signblock.setBlockData(signbd);
-		} else {
+		}
+		if (Tag.STANDING_SIGNS.isTagged(signblock.getType()) || Tag.CEILING_HANGING_SIGNS.isTagged(signblock.getType())) {
 			Rotatable signbd = (Rotatable)signblock.getBlockData();
 			signbd.setRotation(BlockFace.valueOf(signdata.get("Facing").toString()));
 			signblock.setBlockData(signbd);
 		}
+
 		org.bukkit.block.Sign signtext = (org.bukkit.block.Sign) signblock.getState();
-		signtext.setLine(0, ChatColor.AQUA + "**************");
-		signtext.setLine(1, ChatColor.GREEN + "Shop");
+		signtext.getSide(Side.FRONT).setLine(0, ChatColor.AQUA + "**************");
+		signtext.getSide(Side.FRONT).setLine(1, ChatColor.GREEN + "Shop");
 		if (isopen) {
-			signtext.setLine(2, ChatColor.GREEN + "Open");
+			signtext.getSide(Side.FRONT).setLine(2, ChatColor.GREEN + "Open");
 		} else {
-			signtext.setLine(2, ChatColor.RED + "Closed");
+			signtext.getSide(Side.FRONT).setLine(2, ChatColor.RED + "Closed");
 		}
-		signtext.setLine(3, ChatColor.AQUA + "**************");
+		signtext.getSide(Side.FRONT).setLine(3, ChatColor.AQUA + "**************");
+		if (signdoublesided) {
+			signtext.getSide(Side.BACK).setLine(0, ChatColor.AQUA + "**************");
+			signtext.getSide(Side.BACK).setLine(1, ChatColor.GREEN + "Shop");
+			if (isopen) {
+				signtext.getSide(Side.BACK).setLine(2, ChatColor.GREEN + "Open");
+			} else {
+				signtext.getSide(Side.BACK).setLine(2, ChatColor.RED + "Closed");
+			}
+			signtext.getSide(Side.BACK).setLine(3, ChatColor.AQUA + "**************");
+		}
 		signtext.update();
 		// re-check our reinstatement occurred successfully
 		if (validateSign().compareTo(ShopState.SignOK) != 0) {
@@ -680,11 +704,17 @@ public class Shop {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		org.bukkit.block.Sign signtext = (org.bukkit.block.Sign) signblock.getState();
+		Sign signtext = (Sign) signblock.getState();	
 		if (isopen) {
-			signtext.setLine(2, ChatColor.GREEN + "Open");
+			signtext.getSide(Side.FRONT).setLine(2, ChatColor.GREEN + "Open");
+			if (signdoublesided) {
+				signtext.getSide(Side.BACK).setLine(2, ChatColor.GREEN + "Open");
+			}
 		} else {
-			signtext.setLine(2, ChatColor.RED + "Closed");
+			signtext.getSide(Side.FRONT).setLine(2, ChatColor.RED + "Closed");
+			if (signdoublesided) {
+				signtext.getSide(Side.BACK).setLine(2, ChatColor.RED + "Closed");
+			}
 		}
 		signtext.update();
 	}
@@ -1001,4 +1031,9 @@ public class Shop {
 	public String stripcolor(String input) {
         return input == null?null:STRIP_COLOR_PATTERN.matcher(input).replaceAll("");
     }
+
+	// do we paint both sides of a sign
+	public boolean isSigndoublesided() {
+		return signdoublesided;
+	}
 }
