@@ -1,7 +1,6 @@
 package net.obmc.OBChestShop.Utils;
 
 import com.google.gson.*;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -16,12 +15,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.map.MapView;
 import org.bukkit.map.MapView.Scale;
-import org.bukkit.potion.PotionData;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -40,20 +41,39 @@ public class JsonItemStack {
 	
     /**
      * Parse the {@link ItemStack} to JSON
+     * @param <Potion>
      *
      * @param itemStack The {@link ItemStack} instance
      * @return The JSON string
      */
-    public static String toJson(ItemStack itemStack) {
+    public static <Potion> String toJson(ItemStack itemStack) {
 
         Gson gson = new Gson();
         JsonObject itemJson = new JsonObject();
 
         itemJson.addProperty("type", itemStack.getType().name());
-        //if (itemStack.getDurability() > 0) itemJson.addProperty("data", itemStack.getDurability());
-        //if (itemStack.getAmount() != 1) itemJson.addProperty("amount", itemStack.getAmount());
 
+        if ( itemStack.hasItemMeta() ) {
 
+        	try {
+        		
+        		ByteArrayOutputStream io = new ByteArrayOutputStream();
+        		BukkitObjectOutputStream os = new BukkitObjectOutputStream( io );
+        		os.writeObject( itemStack.getItemMeta() );
+        		os.flush();
+        		
+        		byte[] serializedMeta = io.toByteArray();
+        		String encodedMeta = new String(Base64.getEncoder().encode( serializedMeta ) );
+                itemJson.add( "meta", new JsonPrimitive( encodedMeta ) );
+                
+        	} catch( IOException e ) {
+        		
+        		log.log(Level.INFO, "Error saving itemstack meta for " + itemStack.getType().name() );
+        		e.printStackTrace();
+        	}
+        }
+
+        /*
         if (itemStack.hasItemMeta()) {
 
         	JsonObject metaJson = new JsonObject();
@@ -98,6 +118,7 @@ public class JsonItemStack {
             //
 
             JsonObject extraMeta = new JsonObject();
+            
             
             // skull - only works for players who have joined the server
             if (meta instanceof SkullMeta) {
@@ -159,28 +180,64 @@ public class JsonItemStack {
 
             // potions
             } else if (meta instanceof PotionMeta) {
-                PotionMeta pmeta = (PotionMeta) meta;
+            	
+            	PotionMeta pmeta = (PotionMeta) meta;
+
+            	// I don't know how to deal with potion effects, so let's serialize the itemstack as base64
+            	try {
+            		
+            		ByteArrayOutputStream io = new ByteArrayOutputStream();
+            		BukkitObjectOutputStream os = new BukkitObjectOutputStream( io );
+            		os.writeObject( itemStack.getItemMeta() );
+            		os.flush();
+            		
+            		byte[] serializedPotionMeta = io.toByteArray();
+            		
+            		String encodedPotionMeta = new String(Base64.getEncoder().encode( serializedPotionMeta ) );
+
+            		extraMeta.add( "encoded-meta", new JsonPrimitive( encodedPotionMeta ) );
+                    metaJson.add( "extra-meta", extraMeta );
+                    
+            	} catch( IOException e ) {
+            		log.log(Level.INFO, "Error serializing itemstack " + itemStack.getType().name() );
+            		e.printStackTrace();
+            	}
+/*
                 if (pmeta.hasCustomEffects()) {
                     JsonArray customEffects = new JsonArray();
                     pmeta.getCustomEffects().forEach(potionEffect -> {
-                        customEffects.add(new JsonPrimitive(potionEffect.getType().getName()
-                                + ":" + potionEffect.getAmplifier()
-                                + ":" + potionEffect.getDuration() / 20));
+                        customEffects.add(new JsonPrimitive(
+                        	potionEffect.getType().getKey()
+                            + "#" + potionEffect.getAmplifier()
+                            + "#" + potionEffect.getDuration() / 20
+                            + "#" + potionEffect.isAmbient()
+                    		+ "#" + potionEffect.hasParticles()
+                    		+ "#" + potionEffect.hasIcon()
+                    	));
                     });
                     extraMeta.add("custom-effects", customEffects);
                     metaJson.add("extra-meta", extraMeta);
+                    
                 } else {
-                	PotionData pdata = pmeta.getBasePotionData();
+                	
                 	JsonArray baseEffects = new JsonArray();
-                	baseEffects.add(new JsonPrimitive(pdata.getType().name()
-                			+ ":" + pdata.isExtended()
-                			+ ":" + pdata.isUpgraded()));
+                	pmeta.getBasePotionType().getPotionEffects().forEach(potionEffect -> {
+                		baseEffects.add(new JsonPrimitive(
+                			potionEffect.getType().getKey()
+                			+ "#" + potionEffect.getAmplifier()
+                			+ "#" + potionEffect.getDuration() / 20
+                            + "#" + potionEffect.isAmbient()
+                     		+ "#" + potionEffect.hasParticles()
+                     		+ "#" + potionEffect.hasIcon()
+                     	));
+                	});
                 	extraMeta.add("base-effects", baseEffects);
                 	metaJson.add("extra-meta", extraMeta);	
                 }
                 if (pmeta.hasColor()) {
                 	metaJson.addProperty("color", pmeta.getColor().asRGB());
                 }
+
 
             // fireworks
             } else if (meta instanceof FireworkEffectMeta) {
@@ -266,8 +323,10 @@ public class JsonItemStack {
                 extraMeta.addProperty("scaling", mmeta.isScaling());
                 metaJson.add("extra-meta", extraMeta);
             }
+        
             itemJson.add("item-meta", metaJson);
         }
+        */
         return gson.toJson(itemJson);
     }
 
@@ -277,33 +336,66 @@ public class JsonItemStack {
      * @param string The JSON string
      * @return The {@link ItemStack} or null if not succeed
      */
-    public static ItemStack fromJson(String itemstring) {
+    public static ItemStack fromJson(String itemstring) {	
+    	
+        Gson gson = new Gson();
+
         JsonParser parser = new JsonParser();
         JsonElement element = parser.parse(itemstring);
         if (element.isJsonObject()) {
+        	
             JsonObject itemJson = element.getAsJsonObject();
 
             JsonElement typeElement = itemJson.get("type");
-            //JsonElement dataElement = itemJson.get("data");
-            //JsonElement amountElement = itemJson.get("amount");
 
             if (typeElement.isJsonPrimitive()) {
 
-            	//
-                // apply itemstack base data common to all itemstacks
-                //
-            	
                 String type = typeElement.getAsString();
-                //short data = dataElement != null ? dataElement.getAsShort() : 0;
-                //int amount = amountElement != null ? amountElement.getAsInt() : 1;
-
                 ItemStack itemStack = new ItemStack(Material.getMaterial(type), 1);
-                //itemStack.setDurability(data);
-                //itemStack.setAmount(amount);
 
-                JsonElement itemMetaElement = itemJson.get("item-meta");
-                if (itemMetaElement != null && itemMetaElement.isJsonObject()) {
-                    ItemMeta meta = itemStack.getItemMeta();
+                if ( itemJson.keySet().contains( "meta" ) ) {
+
+                	ItemMeta meta = itemStack.getItemMeta();
+                	
+                	try {
+                		
+                		String encodedMeta = itemJson.get( "meta" ).getAsString();
+                		
+                		byte[] serializedMeta = Base64.getDecoder().decode( encodedMeta );
+                		
+                		ByteArrayInputStream in = new ByteArrayInputStream( serializedMeta );
+                		BukkitObjectInputStream is = new BukkitObjectInputStream( in );
+                		
+                		Object decodedMeta = is.readObject();
+                		
+                		switch ( type ) {
+                		case "POTION":
+                		case "SPLASH_POTION":
+                		case "LINGERING_POTION":
+                			PotionMeta pmeta = (PotionMeta) decodedMeta;
+                			itemStack.setItemMeta( pmeta );
+                		};
+                			
+                		
+                	} catch( IOException e ) {
+                		log.log( Level.INFO, "Error deserializing item " + itemStack.getType().name() );
+                		e.printStackTrace();
+                	} catch ( ClassNotFoundException e ) {
+                		log.log( Level.INFO, "Error deserializing item " + itemStack.getType().name() );
+						e.printStackTrace();
+					}
+                }
+                
+            	return itemStack;
+            }
+        }
+               	
+		return null;
+    }
+    
+    
+
+					/*
                     JsonObject metaJson = itemMetaElement.getAsJsonObject();
 
                     // display name
@@ -358,6 +450,7 @@ public class JsonItemStack {
                             }
                         });
                     }
+
 
                     //
                     // apply meta unique to each itemstack type
@@ -459,44 +552,73 @@ public class JsonItemStack {
 
                             // potions
                             } else if (meta instanceof PotionMeta) {
-                            	JsonElement customEffectsElement = extraJson.get("custom-effects");
-                                if (customEffectsElement != null && customEffectsElement.isJsonArray()) {
-                                    PotionMeta pmeta = (PotionMeta) meta;
-                                    JsonArray jarray = customEffectsElement.getAsJsonArray();
-                                    jarray.forEach(jsonElement -> {
-                                        if (jsonElement.isJsonPrimitive()) {
-                                            String enchantString = jsonElement.getAsString();
-                                            if (enchantString.contains(":")) {
-                                                try {
-                                                    String[] splitPotions = enchantString.split(":");
-                                                    PotionEffectType potionType = PotionEffectType.getByName(splitPotions[0]);
-                                                    int amplifier = Integer.parseInt(splitPotions[1]);
-                                                    int duration = Integer.parseInt(splitPotions[2]) * 20;
-                                                    if (potionType != null) {
-                                                        pmeta.addCustomEffect(new PotionEffect(potionType, amplifier, duration), true);
-                                                    }
-                                                } catch (NumberFormatException ex) {
-                                                }
-                                            }
-                                        }
-                                    });
-                                }
+                            	
+                            	PotionMeta pmeta = (PotionMeta) meta;
+                            	
+                            	try {
+                            		
+                            		String encodedPotionMeta = extraJson.get( "encoded-meta" ).getAsString();
+                            		
+                            		byte[] serializedPotionMeta = Base64.getDecoder().decode( encodedPotionMeta );
+                            		
+                            		ByteArrayInputStream in = new ByteArrayInputStream( serializedPotionMeta );
+                            		BukkitObjectInputStream is = new BukkitObjectInputStream( in );
+                            		
+                            		pmeta = (PotionMeta) is.readObject();
+                            		
+                            	} catch( IOException e ) {
+                            		log.log( Level.INFO, "Error deserializing item " + itemStack.getType().name() );
+                            		e.printStackTrace();
+                            	}
+ 								itemStack.setItemMeta(pmeta);
+log.log(Level.INFO, "debug - pmeta has lore? " + pmeta.hasLore() );
+*/
+ /*                           	
                                 JsonElement baseEffects = extraJson.get("base-effects");
                                 if (baseEffects != null && baseEffects.isJsonArray()) {
-                                	PotionMeta pmeta = (PotionMeta) meta;
                                 	JsonArray jarray = baseEffects.getAsJsonArray();
                                 	jarray.forEach(jsonElement -> {
                                 		if (jsonElement.isJsonPrimitive()) {
                                 			String effectString = jsonElement.getAsString();
-                                			if (effectString.contains(":")) {
-                                				String[] splitEffect = effectString.split(":");
-                                				PotionData pdata = new PotionData(PotionType.valueOf(splitEffect[0]), Boolean.valueOf(splitEffect[1]), Boolean.valueOf(splitEffect[2]));
-                                				pmeta.setBasePotionData(pdata);
+                                			if (effectString.contains("#")) {
+                                				String[] splitEffect = effectString.split("#");
+                                				PotionEffect peffect = new PotionEffect(
+                                					PotionEffectType.getByName(splitEffect[0]),
+                                					Integer.parseInt(splitEffect[1]),
+                                					Integer.parseInt(splitEffect[2]),
+                                					Boolean.parseBoolean(splitEffect[3]),
+                                					Boolean.parseBoolean(splitEffect[4]),
+                                					Boolean.parseBoolean(splitEffect[5])
+                                				);
+                                				
                                 			}
                                 		}
                                 	});
                                 }
-
+ 
+                            	JsonElement customEffectsElement = extraJson.get("base-effects");
+                                if (customEffectsElement != null && customEffectsElement.isJsonArray()) {
+                                    JsonArray jarray = customEffectsElement.getAsJsonArray();
+                                    jarray.forEach(jsonElement -> {
+                                        if (jsonElement.isJsonPrimitive()) {
+                                            String effectString = jsonElement.getAsString();
+                                            if (effectString.contains("#")) {
+                                                    String[] splitEffect = effectString.split("#");
+                                    				PotionEffect peffect = new PotionEffect(
+                                    						Registry.EFFECT.get(NamespacedKey.fromString(splitEffect[0])),
+                                        					Integer.parseInt(splitEffect[1]),
+                                        					Integer.parseInt(splitEffect[2]),
+                                        					Boolean.parseBoolean(splitEffect[3]),
+                                        					Boolean.parseBoolean(splitEffect[4]),
+                                        					Boolean.parseBoolean(splitEffect[5])
+                                        				);
+                                    				pmeta.addCustomEffect(peffect, true);
+                                            }
+                                        }
+                                    });
+                                }
+*/
+    /*
                             // fireworks
                             } else if (meta instanceof FireworkEffectMeta) {
                                 JsonElement effectTypeElement = extraJson.get("type");
@@ -539,6 +661,7 @@ public class JsonItemStack {
                                     }
                                 }
                             } else if (meta instanceof FireworkMeta) {
+
                                 FireworkMeta fmeta = (FireworkMeta) meta;
 
                                 JsonElement effectArrayElement = extraJson.get("effects");
@@ -631,10 +754,11 @@ public class JsonItemStack {
                         	return null;
                         }
                     }
-                    itemStack.setItemMeta(meta);
+                    //itemStack.setItemMeta(meta);
                 }
                 return itemStack;
             } else return null;
         } else return null;
     }
+    */
 }

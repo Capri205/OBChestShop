@@ -183,5 +183,5 @@ In so far as new features we haven't thought that far ahead. We wanted a simple 
 replace what we lost when BetterShops stopped being updated. This plugin suited our Wild Wild West server use-case
 and probably won't satisfy most other server and player requirements.
 
-Compiled for 1.20 and Java 17.
+Compiled for 1.21 and Java 21.
 
