@@ -22,12 +22,12 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.13.0</version>
       </plugin>
 	  <plugin>
 		<groupId>org.apache.maven.plugins</groupId>
 		<artifactId>maven-shade-plugin</artifactId>
-		<version>3.5.0</version>
+		<version>3.6.0</version>
 		<executions>
 		  <execution>
 		    <phase>package</phase>
@@ -59,8 +59,8 @@
 
   <repositories>
   	<repository>
-    	<id>spigot repo</id>
-        <url>https://hub.spigotmc.org/nexus/content/repositories/public</url>
+      <id>papermc</id>
+      <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>
     <repository>
       <id>vault-repo</id>
@@ -73,21 +73,15 @@
   </repositories>
   
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13</version>
-      <scope>test</scope>
-    </dependency>
 	<dependency>
-	  <groupId>org.spigotmc</groupId>
-	  <artifactId>spigot-api</artifactId>
-	  <version>1.21-R0.1-SNAPSHOT</version>
+      <groupId>io.papermc.paper</groupId>
+      <artifactId>paper-api</artifactId>
+      <version>1.21.3-R0.1-SNAPSHOT</version>
 	</dependency>
 	<dependency>
       <groupId>net.wesjd</groupId>
       <artifactId>anvilgui</artifactId>
-      <version>1.9.3-SNAPSHOT</version>
+      <version>1.10.3-SNAPSHOT</version>
 	</dependency>
 	<dependency>
       <groupId>net.milkbowl.vault</groupId>
